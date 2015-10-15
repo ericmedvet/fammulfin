@@ -38,7 +38,7 @@ public class TestApi {
   }
 
   @GET
-  @Path("/template")
+  @Path("template")
   public Response template() {
     Entry entry = new Entry();
     entry.setDate(new LocalDate(2011, 2, 7));
@@ -49,12 +49,25 @@ public class TestApi {
   @POST
   @Consumes(MediaType.APPLICATION_JSON)
   public Response create(@Valid Entry entry) {
+    System.out.println("creating valid entry");
     OfyService.ofy().save().entities(entry).now();
     return Response.ok(entry).build();
   }
 
   @POST
-  @Path("/nocheck")
+  @Path("validate")
+  @Consumes(MediaType.APPLICATION_JSON)
+  public Response validate(@Valid Entry entry) {
+    ValidatorFactory factory = Validation.buildDefaultValidatorFactory();
+    Validator validator = factory.getValidator();
+    System.out.println("validator is "+validator.getClass().getName());
+    System.out.println("validating valid entry: "+entry.getPayee());
+    System.out.println(validator.validate(entry));
+    return Response.ok(entry).build();
+  }
+
+  @POST
+  @Path("nocheck")
   @Consumes(MediaType.APPLICATION_JSON)
   public Response createNoCheck(Entry entry) {
     OfyService.ofy().save().entities(entry).now();

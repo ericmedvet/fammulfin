@@ -11,6 +11,7 @@ import com.google.gson.GsonBuilder;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.OutputStream;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Type;
 import javax.inject.Singleton;
@@ -19,6 +20,7 @@ import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.ext.MessageBodyReader;
+import javax.ws.rs.ext.MessageBodyWriter;
 import javax.ws.rs.ext.Provider;
 import org.joda.money.Money;
 import org.joda.time.LocalDate;
@@ -30,11 +32,11 @@ import org.joda.time.LocalDate;
 @Provider
 @Consumes(MediaType.APPLICATION_JSON)
 @Singleton
-public class GsonReader<T> implements MessageBodyReader<T> {
+public class GsonReaderWriter<T> implements MessageBodyReader<T>, MessageBodyWriter<T> {
 
   private Gson gson;
 
-  public GsonReader() {
+  public GsonReaderWriter() {
     //should probably inject or something similar
     GsonBuilder gsonBuilder = new GsonBuilder();
     gsonBuilder.registerTypeAdapter(Money.class, new MyMoneyConverter());
@@ -64,4 +66,37 @@ public class GsonReader<T> implements MessageBodyReader<T> {
     return gson.fromJson(new InputStreamReader(inputStream), type);
   }
   
+  @Override
+  public void writeTo(
+          T t,
+          Class<?> type,
+          Type genericType,
+          Annotation[] annotations,
+          MediaType mediaType,
+          MultivaluedMap<String, Object> httpHeaders,
+          OutputStream entityStream)
+          throws IOException, WebApplicationException {
+    httpHeaders.get("Content-Type").add("charset=UTF-8");
+    entityStream.write(gson.toJson(t).getBytes("UTF-8"));
+  }
+
+  @Override
+  public long getSize(
+          T t,
+          Class<?> type,
+          Type genericType,
+          Annotation[] annotations,
+          MediaType mediaType) {
+    return -1;
+  }
+
+  @Override
+  public boolean isWriteable(
+          Class<?> type,
+          Type genericType,
+          Annotation[] annotations,
+          MediaType mediaType) {
+    return true;
+  }
+
 }

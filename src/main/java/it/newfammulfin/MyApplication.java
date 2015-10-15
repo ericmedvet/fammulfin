@@ -5,8 +5,10 @@
  */
 package it.newfammulfin;
 
+import it.newfammulfin.api.util.GsonReaderWriter;
+import org.apache.bval.jsr303.ApacheValidationProvider;
 import org.glassfish.jersey.server.ResourceConfig;
-import org.glassfish.jersey.server.validation.ValidationConfig;
+import org.glassfish.jersey.server.ServerProperties;
 
 /**
  *
@@ -16,9 +18,10 @@ public class MyApplication extends ResourceConfig {
 
   public MyApplication() {
     packages(
-            "it.newfammulfin.model",
-            "it.newfammulfin.api",
-            "it.newfammulfin.api.util");
+            GsonReaderWriter.class.getPackage().getName(),
+            "it.newfammulfin.api");
+    register(ApacheValidationProvider.class);
+    property(ServerProperties.BV_FEATURE_DISABLE, false);
   }
-  
+
 }

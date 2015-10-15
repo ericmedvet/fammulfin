@@ -10,7 +10,7 @@ import com.googlecode.objectify.annotation.Id;
 import java.util.Objects;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Pattern;
-import org.hibernate.validator.constraints.Length;
+import javax.validation.constraints.Size;
 import org.joda.money.Money;
 import org.joda.time.LocalDate;
 
@@ -26,7 +26,7 @@ public class Entry {
   private LocalDate date;
   @com.sappenin.objectify.annotation.Money
   private Money amount;
-  @NotNull @Pattern(regexp = "[a-zA-Z][a-zA-Z0-9]*") @Length(min = 5)
+  @NotNull @Pattern(regexp = "[a-zA-Z][a-zA-Z0-9]*") @Size(min = 5)
   private String payee;
   private String description;
   private String note;
