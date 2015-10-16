@@ -26,7 +26,7 @@ public class Entry {
   private LocalDate date;
   @com.sappenin.objectify.annotation.Money
   private Money amount;
-  @NotNull @Pattern(regexp = "[a-zA-Z][a-zA-Z0-9]*") @Size(min = 5)
+  @NotNull @Size(min = 5, message="too short") @Pattern(regexp = "[a-zA-Z][a-zA-Z0-9]*")
   private String payee;
   private String description;
   private String note;
