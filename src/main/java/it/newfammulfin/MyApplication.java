@@ -6,9 +6,10 @@
 package it.newfammulfin;
 
 import it.newfammulfin.api.util.GsonReaderWriter;
-import org.apache.bval.jsr303.ApacheValidationProvider;
+import org.apache.bval.BeanValidator;
 import org.glassfish.jersey.server.ResourceConfig;
 import org.glassfish.jersey.server.ServerProperties;
+import org.glassfish.jersey.server.validation.ValidationFeature;
 
 /**
  *
@@ -20,8 +21,10 @@ public class MyApplication extends ResourceConfig {
     packages(
             GsonReaderWriter.class.getPackage().getName(),
             "it.newfammulfin.api");
-    register(ApacheValidationProvider.class);
-    property(ServerProperties.BV_FEATURE_DISABLE, false);
+    //packages(true, BeanValidator.class.getPackage().getName());
+    register(ValidationFeature.class);
+    property(ServerProperties.BV_SEND_ERROR_IN_RESPONSE, true);
+    property(ServerProperties.BV_DISABLE_VALIDATE_ON_EXECUTABLE_OVERRIDE_CHECK, true);
   }
 
 }
