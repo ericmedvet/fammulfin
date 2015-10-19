@@ -5,6 +5,9 @@
  */
 package it.newfammulfin.api;
 
+import com.google.appengine.api.users.User;
+import com.google.appengine.api.users.UserService;
+import com.google.appengine.api.users.UserServiceFactory;
 import it.newfammulfin.model.Entry;
 import it.newfammulfin.api.util.OfyService;
 import java.util.List;
@@ -33,6 +36,8 @@ public class TestApi {
 
   @GET
   public Response listAll() {
+    UserService userService = UserServiceFactory.getUserService();
+    User user = userService.getCurrentUser();
     List<Entry> entries = OfyService.ofy().load().type(Entry.class).list();
     return Response.ok(entries).build();
   }

@@ -22,7 +22,7 @@ import org.joda.money.Money;
  *
  * @author eric
  */
-public class MyMoneyConverter implements JsonSerializer<Money>, JsonDeserializer<Money> {
+public class MoneyConverter implements JsonSerializer<Money>, JsonDeserializer<Money> {
   
   private final static String VALUE_FIELD = "value";
   private final static String CURRENCY_FIELD = "currency";

@@ -8,6 +8,7 @@ package it.newfammulfin.api.util;
 import com.fatboyindustrial.gsonjodatime.LocalDateConverter;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.googlecode.objectify.Key;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -22,6 +23,7 @@ import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.ext.MessageBodyReader;
 import javax.ws.rs.ext.MessageBodyWriter;
 import javax.ws.rs.ext.Provider;
+import org.joda.money.CurrencyUnit;
 import org.joda.money.Money;
 import org.joda.time.LocalDate;
 
@@ -39,8 +41,10 @@ public class GsonReaderWriter<T> implements MessageBodyReader<T>, MessageBodyWri
   public GsonReaderWriter() {
     //should probably inject or something similar
     GsonBuilder gsonBuilder = new GsonBuilder();
-    gsonBuilder.registerTypeAdapter(Money.class, new MyMoneyConverter());
+    gsonBuilder.registerTypeAdapter(Money.class, new MoneyConverter());
     gsonBuilder.registerTypeAdapter(LocalDate.class, new LocalDateConverter());
+    gsonBuilder.registerTypeAdapter(CurrencyUnit.class, new CurrencyUnitConverter());
+    gsonBuilder.registerTypeAdapter(Key.class, new KeyConverter());
     gson = gsonBuilder.create();
   }
 
