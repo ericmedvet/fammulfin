@@ -3,8 +3,9 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package it.newfammulfin.api.util;
+package it.newfammulfin.api;
 
+import it.newfammulfin.api.util.OfyService;
 import it.newfammulfin.model.Entry;
 import java.util.List;
 import javax.ws.rs.GET;
@@ -25,6 +26,7 @@ public class GroupResource {
   public Response listAll() {
     //extract user from the securitycontext; see http://www.nextinstruction.com/custom-jersey-security-filter.html
     // and https://jersey.java.net/documentation/latest/security.html#d0e12179
+    // and http://porterhead.blogspot.it/2013/01/writing-rest-services-in-java-part-6.html
     List<Entry> entries = OfyService.ofy().load().type(Entry.class).list();
     return Response.ok(entries).build();
   }
