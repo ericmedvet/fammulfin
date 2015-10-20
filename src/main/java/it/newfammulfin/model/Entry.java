@@ -51,6 +51,8 @@ public class Entry extends WithModifications {
   private boolean monthly;
   private Map<Key<RegisteredUser>, BigDecimal> byShares = new LinkedHashMap<>();
   private Map<Key<RegisteredUser>, BigDecimal> forShares = new LinkedHashMap<>();
+  private boolean byPercentage;
+  private boolean forPercentage;
   
   public Long getId() {
     return id;
@@ -135,6 +137,22 @@ public class Entry extends WithModifications {
   public Map<Key<RegisteredUser>, BigDecimal> getForShares() {
     return forShares;
   }
+
+  public boolean isByPercentage() {
+    return byPercentage;
+  }
+
+  public void setByPercentage(boolean byPercentage) {
+    this.byPercentage = byPercentage;
+  }
+
+  public boolean isForPercentage() {
+    return forPercentage;
+  }
+
+  public void setForPercentage(boolean forPercentage) {
+    this.forPercentage = forPercentage;
+  }  
 
   @Override
   public int hashCode() {
