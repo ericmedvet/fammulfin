@@ -20,24 +20,20 @@ import org.hibernate.validator.constraints.NotBlank;
 @Entity
 public class RegisteredUser extends WithModifications implements Principal {
   
-  @Id
-  private Long id;
+  @Id @NotNull
+  private String name;
   @NotNull @NotBlank @Size(max = 128)
   private String firstName;
   @NotNull @NotBlank @Size(max = 128)
   private String lastName;
-  @NotNull
-  private String name;
 
-  public RegisteredUser(Long id, String name) {
-    this.id = id;
+  public RegisteredUser(String name) {
     this.name = name;
   }
 
-  public Long getId() {
-    return id;
+  public RegisteredUser() {
   }
-  
+
   @Override
   public String getName() {
     return name;
@@ -61,8 +57,8 @@ public class RegisteredUser extends WithModifications implements Principal {
 
   @Override
   public int hashCode() {
-    int hash = 7;
-    hash = 29 * hash + Objects.hashCode(this.id);
+    int hash = 5;
+    hash = 67 * hash + Objects.hashCode(this.name);
     return hash;
   }
 
@@ -75,7 +71,7 @@ public class RegisteredUser extends WithModifications implements Principal {
       return false;
     }
     final RegisteredUser other = (RegisteredUser) obj;
-    if (!Objects.equals(this.id, other.id)) {
+    if (!Objects.equals(this.name, other.name)) {
       return false;
     }
     return true;
@@ -83,7 +79,7 @@ public class RegisteredUser extends WithModifications implements Principal {
 
   @Override
   public String toString() {
-    return "RegisteredUser{" + "id=" + id + ", name=" + name + '}';
+    return "RegisteredUser{" + "name=" + name + '}';
   }
-  
-}
+
+ }

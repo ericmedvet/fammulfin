@@ -52,6 +52,9 @@ public class Entry extends WithModifications {
   private Map<Key<RegisteredUser>, BigDecimal> forShares = new LinkedHashMap<>();
   private boolean byPercentage;
   private boolean forPercentage;
+
+  public Entry() {
+  }
   
   public Long getId() {
     return id;

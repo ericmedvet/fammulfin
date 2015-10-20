@@ -6,7 +6,9 @@
 package it.newfammulfin.model;
 
 import com.googlecode.objectify.Key;
+import com.googlecode.objectify.annotation.Entity;
 import com.googlecode.objectify.annotation.Id;
+import com.googlecode.objectify.annotation.Index;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Objects;
@@ -21,17 +23,22 @@ import org.joda.money.CurrencyUnit;
  *
  * @author eric
  */
+@Entity
 public class Group extends WithModifications {
   
   @Id
   private Long id;
   @NotNull @NotBlank @Pattern(regexp = "[a-zA-Z][a-zA-Z0-9]*") @Size(max = 128)
   private String name;
+  @Index
   private Key<RegisteredUser> masterUser;
   @NotEmpty //should also validate nicknames?
   private Map<Key<RegisteredUser>, String> users = new LinkedHashMap<>(); //userKey, nickname
   @NotNull
   private CurrencyUnit defaultCurrencyUnit;
+
+  public Group() {
+  }
 
   public Long getId() {
     return id;

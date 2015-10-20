@@ -5,29 +5,37 @@
  */
 package it.newfammulfin.api;
 
+import com.googlecode.objectify.Key;
 import it.newfammulfin.api.util.OfyService;
-import it.newfammulfin.model.Entry;
+import it.newfammulfin.model.Group;
+import it.newfammulfin.model.RegisteredUser;
 import java.util.List;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
+import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+import javax.ws.rs.core.SecurityContext;
 
 /**
  *
  * @author eric
  */
-@Path("/groups")
+@Path("groups")
 @Produces(MediaType.APPLICATION_JSON)
 public class GroupResource {
 
+  //extract user from the securitycontext; see http://www.nextinstruction.com/custom-jersey-security-filter.html
+  // and https://jersey.java.net/documentation/latest/security.html#d0e12179
+  // and http://porterhead.blogspot.it/2013/01/writing-rest-services-in-java-part-6.html
+  @Context
+  private SecurityContext securityContext;
+
   @GET
   public Response listAll() {
-    //extract user from the securitycontext; see http://www.nextinstruction.com/custom-jersey-security-filter.html
-    // and https://jersey.java.net/documentation/latest/security.html#d0e12179
-    // and http://porterhead.blogspot.it/2013/01/writing-rest-services-in-java-part-6.html
-    List<Entry> entries = OfyService.ofy().load().type(Entry.class).list();
-    return Response.ok(entries).build();
+    Key<RegisteredUser> userKey = Key.create(RegisteredUser.class, securityContext.getUserPrincipal().getName());
+    List<Group> groups = OfyService.ofy().load().type(Group.class).filterKey(userKey).list();
+    return Response.ok(groups).build();
   }
 }

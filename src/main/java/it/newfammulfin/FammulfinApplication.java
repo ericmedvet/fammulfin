@@ -13,9 +13,9 @@ import org.glassfish.jersey.server.ServerProperties;
  *
  * @author eric
  */
-public class MyApplication extends ResourceConfig {
+public class FammulfinApplication extends ResourceConfig {
 
-  public MyApplication() {
+  public FammulfinApplication() {
     packages(
             GsonReaderWriter.class.getPackage().getName(),
             "it.newfammulfin.api");

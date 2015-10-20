@@ -6,6 +6,7 @@
 package it.newfammulfin.model;
 
 import com.googlecode.objectify.Key;
+import com.googlecode.objectify.annotation.Entity;
 import com.googlecode.objectify.annotation.Id;
 import com.googlecode.objectify.annotation.Parent;
 import it.newfammulfin.model.Group;
@@ -20,6 +21,7 @@ import org.hibernate.validator.constraints.NotBlank;
  *
  * @author eric
  */
+@Entity
 public class Chapter extends WithModifications {
   
   @Id
@@ -29,6 +31,9 @@ public class Chapter extends WithModifications {
   @Parent
   private Key<Group> group;
   private Key<Chapter> parentChapter;
+
+  public Chapter() {
+  }
 
   public Chapter(Long id, String name, Key<Chapter> parentChapter) {
     this.id = id;
