@@ -18,7 +18,7 @@ import org.hibernate.validator.constraints.NotBlank;
  * @author eric
  */
 @Entity
-public class RegisteredUser extends WithModifications implements Principal {
+public class RegisteredUser implements Principal {
   
   @Id @NotNull
   private String name;

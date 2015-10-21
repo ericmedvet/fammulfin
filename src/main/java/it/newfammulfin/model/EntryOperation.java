@@ -9,46 +9,36 @@ import com.googlecode.objectify.Key;
 import com.googlecode.objectify.annotation.Entity;
 import com.googlecode.objectify.annotation.Id;
 import com.googlecode.objectify.annotation.Parent;
+import java.util.Date;
 import java.util.Objects;
-import javax.validation.constraints.NotNull;
-import javax.validation.constraints.Pattern;
-import javax.validation.constraints.Size;
-import org.hibernate.validator.constraints.NotBlank;
 
 /**
  *
  * @author eric
  */
 @Entity
-public class Chapter {
+public class EntryOperation {
   
   @Id
   private Long id;
-  @NotNull @NotBlank @Pattern(regexp = "[a-zA-Z][a-zA-Z0-9]*") @Size(max = 128)
-  private String name;
   @Parent
   private Key<Group> groupKey;
-  private Key<Chapter> parentChapterKey;
+  private Key<Entry> entryKey;
+  private Date date;
+  private Key<RegisteredUser> userKey;
 
-  public Chapter() {
+  public EntryOperation() {
   }
 
-  public Chapter(String name, Key<Group> groupKey, Key<Chapter> parentChapterKey) {
-    this.name = name;
+  public EntryOperation(Key<Group> groupKey, Key<Entry> entryKey, Date date, Key<RegisteredUser> userKey) {
     this.groupKey = groupKey;
-    this.parentChapterKey = parentChapterKey;
+    this.entryKey = entryKey;
+    this.date = date;
+    this.userKey = userKey;
   }
 
   public Long getId() {
     return id;
-  }
-
-  public String getName() {
-    return name;
-  }
-
-  public void setName(String name) {
-    this.name = name;
   }
 
   public Key<Group> getGroupKey() {
@@ -59,18 +49,34 @@ public class Chapter {
     this.groupKey = groupKey;
   }
 
-  public Key<Chapter> getParentChapterKey() {
-    return parentChapterKey;
+  public Key<Entry> getEntryKey() {
+    return entryKey;
   }
 
-  public void setParentChapterKey(Key<Chapter> parentChapterKey) {
-    this.parentChapterKey = parentChapterKey;
+  public void setEntryKey(Key<Entry> entryKey) {
+    this.entryKey = entryKey;
+  }
+
+  public Date getDate() {
+    return date;
+  }
+
+  public void setDate(Date date) {
+    this.date = date;
+  }
+
+  public Key<RegisteredUser> getUserKey() {
+    return userKey;
+  }
+
+  public void setUserKey(Key<RegisteredUser> userKey) {
+    this.userKey = userKey;
   }
 
   @Override
   public int hashCode() {
-    int hash = 5;
-    hash = 83 * hash + Objects.hashCode(this.id);
+    int hash = 3;
+    hash = 97 * hash + Objects.hashCode(this.id);
     return hash;
   }
 
@@ -82,7 +88,7 @@ public class Chapter {
     if (getClass() != obj.getClass()) {
       return false;
     }
-    final Chapter other = (Chapter) obj;
+    final EntryOperation other = (EntryOperation) obj;
     if (!Objects.equals(this.id, other.id)) {
       return false;
     }
@@ -91,7 +97,7 @@ public class Chapter {
 
   @Override
   public String toString() {
-    return "Chapter{" + "id=" + id + ", name=" + name + '}';
+    return "EntryOperation{" + "id=" + id + ", entryKey=" + entryKey + ", date=" + date + ", userKey=" + userKey + '}';
   }
   
 }

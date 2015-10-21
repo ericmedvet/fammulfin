@@ -14,7 +14,6 @@ import com.google.gson.JsonPrimitive;
 import com.google.gson.JsonSerializationContext;
 import com.google.gson.JsonSerializer;
 import java.lang.reflect.Type;
-import java.math.BigDecimal;
 import org.joda.money.CurrencyUnit;
 import org.joda.money.Money;
 

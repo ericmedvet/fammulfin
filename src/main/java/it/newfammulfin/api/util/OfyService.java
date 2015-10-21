@@ -21,6 +21,7 @@ public class OfyService {
 
   static {
     ObjectifyService.factory().getTranslators().add(new JodaMoneyEmbeddedEntityTranslatorFactory());
+    ObjectifyService.factory().getTranslators().add(new CurrencyUnitStringTranslatorFactory());
     ObjectifyService.register(Entry.class);
     ObjectifyService.register(Chapter.class);
     ObjectifyService.register(RegisteredUser.class);

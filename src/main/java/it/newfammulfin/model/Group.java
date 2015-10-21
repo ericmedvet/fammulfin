@@ -24,16 +24,17 @@ import org.joda.money.CurrencyUnit;
  * @author eric
  */
 @Entity
-public class Group extends WithModifications {
+public class Group {
   
   @Id
   private Long id;
   @NotNull @NotBlank @Pattern(regexp = "[a-zA-Z][a-zA-Z0-9]*") @Size(max = 128)
   private String name;
   @Index
-  private Key<RegisteredUser> masterUser;
-  @NotEmpty //should also validate nicknames?
-  private Map<Key<RegisteredUser>, String> users = new LinkedHashMap<>(); //userKey, nickname
+  private Key<RegisteredUser> masterUserKey;
+  //should validate nicknames?
+  @Index
+  private Map<Key<RegisteredUser>, String> usersMap = new LinkedHashMap<>(); //userKey, nickname
   @NotNull
   private CurrencyUnit defaultCurrencyUnit;
 
@@ -52,12 +53,12 @@ public class Group extends WithModifications {
     this.name = name;
   }
 
-  public Key<RegisteredUser> getMasterUser() {
-    return masterUser;
+  public Key<RegisteredUser> getMasterUserKey() {
+    return masterUserKey;
   }
 
-  public void setMasterUser(Key<RegisteredUser> masterUser) {
-    this.masterUser = masterUser;
+  public void setMasterUserKey(Key<RegisteredUser> masterUserKey) {
+    this.masterUserKey = masterUserKey;
   }
 
   public CurrencyUnit getDefaultCurrencyUnit() {
@@ -68,8 +69,8 @@ public class Group extends WithModifications {
     this.defaultCurrencyUnit = defaultCurrencyUnit;
   }
 
-  public Map<Key<RegisteredUser>, String> getUsers() {
-    return users;
+  public Map<Key<RegisteredUser>, String> getUsersMap() {
+    return usersMap;
   }
 
   @Override

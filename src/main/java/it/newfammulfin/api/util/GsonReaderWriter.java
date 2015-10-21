@@ -36,7 +36,7 @@ import org.joda.time.LocalDate;
 @Singleton
 public class GsonReaderWriter<T> implements MessageBodyReader<T>, MessageBodyWriter<T> {
 
-  private Gson gson;
+  private final Gson gson;
 
   public GsonReaderWriter() {
     //should probably inject or something similar
@@ -45,6 +45,7 @@ public class GsonReaderWriter<T> implements MessageBodyReader<T>, MessageBodyWri
     gsonBuilder.registerTypeAdapter(LocalDate.class, new LocalDateConverter());
     gsonBuilder.registerTypeAdapter(CurrencyUnit.class, new CurrencyUnitConverter());
     gsonBuilder.registerTypeAdapter(Key.class, new KeyConverter());
+    gsonBuilder.enableComplexMapKeySerialization();
     gson = gsonBuilder.create();
   }
 

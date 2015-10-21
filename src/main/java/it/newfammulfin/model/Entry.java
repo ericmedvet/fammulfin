@@ -29,18 +29,18 @@ import org.joda.time.LocalDate;
  * @author eric
  */
 @Entity
-public class Entry extends WithModifications {
+public class Entry {
   
   @Id
   private Long id;
   @Parent
-  private Key<Group> group;
+  private Key<Group> groupKey;
   private LocalDate date;
   @com.sappenin.objectify.annotation.Money
   private Money amount;
   @NotNull @NotBlank @Pattern(regexp = "[a-zA-Z][a-zA-Z0-9]*") @Size(max = 128)
   private String payee;
-  private Key<Chapter> chapter;
+  private Key<Chapter> chapterKey;
   //should validate each? see https://github.com/jirutka/validator-collection
   private Set<String> tags = new LinkedHashSet<>();
   private String description;
@@ -58,14 +58,6 @@ public class Entry extends WithModifications {
   
   public Long getId() {
     return id;
-  }
-
-  public Key<Group> getGroup() {
-    return group;
-  }
-
-  public void setGroup(Key<Group> group) {
-    this.group = group;
   }
 
   public LocalDate getDate() {
@@ -92,12 +84,20 @@ public class Entry extends WithModifications {
     this.payee = payee;
   }
 
-  public Key<Chapter> getChapter() {
-    return chapter;
+  public Key<Group> getGroupKey() {
+    return groupKey;
   }
 
-  public void setChapter(Key<Chapter> chapter) {
-    this.chapter = chapter;
+  public void setGroupKey(Key<Group> groupKey) {
+    this.groupKey = groupKey;
+  }
+
+  public Key<Chapter> getChapterKey() {
+    return chapterKey;
+  }
+
+  public void setChapterKey(Key<Chapter> chapterKey) {
+    this.chapterKey = chapterKey;
   }
 
   public String getDescription() {
