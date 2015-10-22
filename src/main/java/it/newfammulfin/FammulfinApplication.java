@@ -5,7 +5,10 @@
  */
 package it.newfammulfin;
 
+import it.newfammulfin.api.RegisteredUserResource;
 import it.newfammulfin.api.util.GsonReaderWriter;
+import javax.validation.Configuration;
+import javax.validation.Validation;
 import org.glassfish.jersey.server.ResourceConfig;
 import org.glassfish.jersey.server.ServerProperties;
 
@@ -18,7 +21,7 @@ public class FammulfinApplication extends ResourceConfig {
   public FammulfinApplication() {
     packages(
             GsonReaderWriter.class.getPackage().getName(),
-            "it.newfammulfin.api");
+            RegisteredUserResource.class.getPackage().getName());
     property(ServerProperties.BV_SEND_ERROR_IN_RESPONSE, true);
   }
 

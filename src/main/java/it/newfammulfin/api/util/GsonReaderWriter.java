@@ -5,6 +5,9 @@
  */
 package it.newfammulfin.api.util;
 
+import it.newfammulfin.api.util.converters.MoneyConverter;
+import it.newfammulfin.api.util.converters.CurrencyUnitConverter;
+import it.newfammulfin.api.util.converters.KeyConverter;
 import com.fatboyindustrial.gsonjodatime.LocalDateConverter;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;

@@ -9,6 +9,7 @@ import com.googlecode.objectify.Key;
 import com.googlecode.objectify.annotation.Entity;
 import com.googlecode.objectify.annotation.Id;
 import com.googlecode.objectify.annotation.Index;
+import it.newfammulfin.api.util.validation.EachValuePattern;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Objects;
@@ -16,7 +17,6 @@ import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Pattern;
 import javax.validation.constraints.Size;
 import org.hibernate.validator.constraints.NotBlank;
-import org.hibernate.validator.constraints.NotEmpty;
 import org.joda.money.CurrencyUnit;
 
 /**
@@ -33,7 +33,7 @@ public class Group {
   @Index
   private Key<RegisteredUser> masterUserKey;
   //should validate nicknames?
-  @Index
+  @Index @EachValuePattern(regexp = "[a-zA-Z][\\w'_.-]{0,127}")
   private Map<Key<RegisteredUser>, String> usersMap = new LinkedHashMap<>(); //userKey, nickname
   @NotNull
   private CurrencyUnit defaultCurrencyUnit;
