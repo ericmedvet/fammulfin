@@ -6,6 +6,7 @@
 package it.newfammulfin;
 
 import it.newfammulfin.api.RegisteredUserResource;
+import it.newfammulfin.api.util.GroupRetrieverRequestFilter;
 import it.newfammulfin.api.util.GsonReaderWriter;
 import javax.validation.Configuration;
 import javax.validation.Validation;
@@ -20,9 +21,10 @@ public class FammulfinApplication extends ResourceConfig {
 
   public FammulfinApplication() {
     packages(
+            RegisteredUserResource.class.getPackage().getName(),
             GsonReaderWriter.class.getPackage().getName(),
-            RegisteredUserResource.class.getPackage().getName());
-    property(ServerProperties.BV_SEND_ERROR_IN_RESPONSE, true);
+            GroupRetrieverRequestFilter.class.getPackage().getName());
+    property(ServerProperties.BV_SEND_ERROR_IN_RESPONSE, true); //could be moved in web.xml
   }
 
 }
