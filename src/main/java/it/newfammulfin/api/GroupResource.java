@@ -54,7 +54,7 @@ public class GroupResource {
   }
 
   @GET
-  @Path("{groupId}")
+  @Path("{groupId:[0-9]+}")
   @RetrieveGroup
   public Response read() {
     Group group = (Group) requestContext.getProperty(GroupRetrieverRequestFilter.GROUP);
@@ -62,7 +62,7 @@ public class GroupResource {
   }
 
   @DELETE
-  @Path("{groupId}")
+  @Path("{groupId:[0-9]+}")
   @RetrieveGroup
   public Response delete() {
     Key<RegisteredUser> userKey = Key.create(RegisteredUser.class, securityContext.getUserPrincipal().getName());
@@ -96,7 +96,7 @@ public class GroupResource {
   }
 
   @PUT
-  @Path("{groupId}")
+  @Path("{groupId:[0-9]+}")
   @RetrieveGroup
   @Consumes(MediaType.APPLICATION_JSON)
   public Response update(@Valid @NotNull Group group) {

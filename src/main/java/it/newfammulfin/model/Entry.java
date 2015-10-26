@@ -8,6 +8,7 @@ package it.newfammulfin.model;
 import com.googlecode.objectify.Key;
 import com.googlecode.objectify.annotation.Entity;
 import com.googlecode.objectify.annotation.Id;
+import com.googlecode.objectify.annotation.Index;
 import com.googlecode.objectify.annotation.Parent;
 import java.math.BigDecimal;
 import java.util.ArrayList;
@@ -35,18 +36,22 @@ public class Entry {
   private Long id;
   @Parent
   private Key<Group> groupKey;
+  @Index
   private LocalDate date;
   @com.sappenin.objectify.annotation.Money
   private Money amount;
-  @NotNull @NotBlank @Pattern(regexp = "[a-zA-Z][a-zA-Z0-9]*") @Size(max = 128)
+  @Index @NotNull @NotBlank @Pattern(regexp = "[a-zA-Z][a-zA-Z0-9]*") @Size(max = 128)
   private String payee;
+  @Index
   private Key<Chapter> chapterKey;
   //should validate each? see https://github.com/jirutka/validator-collection
+  @Index
   private Set<String> tags = new LinkedHashSet<>();
   private String description;
   private String note;
   //should validate each? see https://github.com/jirutka/validator-collection
   private List<String> attachmentUrls = new ArrayList<>();
+  @Index
   private boolean monthly;
   private Map<Key<RegisteredUser>, BigDecimal> byShares = new LinkedHashMap<>();
   private Map<Key<RegisteredUser>, BigDecimal> forShares = new LinkedHashMap<>();

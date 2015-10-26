@@ -8,6 +8,7 @@ package it.newfammulfin.model;
 import com.googlecode.objectify.Key;
 import com.googlecode.objectify.annotation.Entity;
 import com.googlecode.objectify.annotation.Id;
+import com.googlecode.objectify.annotation.Index;
 import com.googlecode.objectify.annotation.Parent;
 import java.util.Date;
 import java.util.Objects;
@@ -23,6 +24,7 @@ public class EntryOperation {
   private Long id;
   @Parent
   private Key<Group> groupKey;
+  @Index
   private Key<Entry> entryKey;
   private Date date;
   private Key<RegisteredUser> userKey;
