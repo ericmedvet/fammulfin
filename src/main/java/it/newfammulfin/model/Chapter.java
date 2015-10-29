@@ -8,6 +8,7 @@ package it.newfammulfin.model;
 import com.googlecode.objectify.Key;
 import com.googlecode.objectify.annotation.Entity;
 import com.googlecode.objectify.annotation.Id;
+import com.googlecode.objectify.annotation.Index;
 import com.googlecode.objectify.annotation.Parent;
 import java.util.Objects;
 import javax.validation.constraints.NotNull;
@@ -24,10 +25,11 @@ public class Chapter {
   
   @Id
   private Long id;
-  @NotNull @NotBlank @Pattern(regexp = "[a-zA-Z][a-zA-Z0-9]*") @Size(max = 128)
+  @Index @NotNull @NotBlank @Pattern(regexp = "[a-zA-Z][a-zA-Z0-9]*") @Size(max = 128)
   private String name;
   @Parent
   private Key<Group> groupKey;
+  @Index
   private Key<Chapter> parentChapterKey;
 
   public Chapter() {

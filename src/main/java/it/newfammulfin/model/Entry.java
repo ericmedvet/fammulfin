@@ -10,6 +10,8 @@ import com.googlecode.objectify.annotation.Entity;
 import com.googlecode.objectify.annotation.Id;
 import com.googlecode.objectify.annotation.Index;
 import com.googlecode.objectify.annotation.Parent;
+import it.newfammulfin.api.util.validation.EachElementPattern;
+import it.newfammulfin.api.util.validation.Shares;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -44,16 +46,18 @@ public class Entry {
   private String payee;
   @Index
   private Key<Chapter> chapterKey;
-  //should validate each? see https://github.com/jirutka/validator-collection
   @Index
+  @EachElementPattern(regexp = "[a-zA-Z][a-zA-Z0-9]{0,31}")
   private Set<String> tags = new LinkedHashSet<>();
   private String description;
   private String note;
-  //should validate each? see https://github.com/jirutka/validator-collection
+  @EachElementPattern(regexp = "^(https?|ftp|file)://[-a-zA-Z0-9+&@#/%?=~_|!:,.;]*[-a-zA-Z0-9+&@#/%=~_|]") //see http://stackoverflow.com/a/15518889/1003056
   private List<String> attachmentUrls = new ArrayList<>();
   @Index
-  private boolean monthly;
+  private Periodicity periodicity = Periodicity.NONE;
+  @Shares
   private Map<Key<RegisteredUser>, BigDecimal> byShares = new LinkedHashMap<>();
+  @Shares
   private Map<Key<RegisteredUser>, BigDecimal> forShares = new LinkedHashMap<>();
   private boolean byPercentage;
   private boolean forPercentage;
@@ -121,12 +125,12 @@ public class Entry {
     this.note = note;
   }
 
-  public boolean isMonthly() {
-    return monthly;
+  public Periodicity getPeriodicity() {
+    return periodicity;
   }
 
-  public void setMonthly(boolean monthly) {
-    this.monthly = monthly;
+  public void setPeriodicity(Periodicity periodicity) {
+    this.periodicity = periodicity;
   }
 
   public Set<String> getTags() {

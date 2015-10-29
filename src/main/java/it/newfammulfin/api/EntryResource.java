@@ -10,13 +10,20 @@ import com.googlecode.objectify.Work;
 import it.newfammulfin.api.util.GroupRetrieverRequestFilter;
 import it.newfammulfin.api.util.OfyService;
 import it.newfammulfin.api.util.RetrieveGroup;
+import it.newfammulfin.model.Chapter;
 import it.newfammulfin.model.Entry;
 import it.newfammulfin.model.EntryOperation;
 import it.newfammulfin.model.Group;
 import it.newfammulfin.model.RegisteredUser;
+import java.io.IOException;
 import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.logging.Logger;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
@@ -33,6 +40,9 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.SecurityContext;
+import org.apache.commons.csv.CSVFormat;
+import org.apache.commons.csv.CSVParser;
+import org.apache.commons.csv.CSVRecord;
 import org.joda.money.Money;
 import org.joda.time.LocalDate;
 
@@ -70,8 +80,10 @@ public class EntryResource {
     entry.setDescription("Beer");
     entry.getByShares().put(userKey, BigDecimal.ONE);
     for (Key<RegisteredUser> groupUserKey : group.getUsersMap().keySet()) {
-      entry.getForShares().put(groupUserKey, BigDecimal.ONE.divide(BigDecimal.valueOf(group.getUsersMap().size())));
+      entry.getForShares().put(groupUserKey, BigDecimal.valueOf(1000, 3).divide(BigDecimal.valueOf(group.getUsersMap().size()), RoundingMode.DOWN));
     }
+    checkAndAdjustShares(entry.getByShares());
+    checkAndAdjustShares(entry.getForShares());
     return Response.ok(entry).build();
   }
 
@@ -80,7 +92,7 @@ public class EntryResource {
   public Response read(@PathParam("id") @NotNull Long id) {
     Group group = (Group) requestContext.getProperty(GroupRetrieverRequestFilter.GROUP);
     Entry entry = OfyService.ofy().load().type(Entry.class).parent(group).id(id).now();
-    if ((entry == null) || (!entry.getGroupKey().equals(Key.create(Group.class, group.getId())))) {
+    if ((entry == null) || (!entry.getGroupKey().equals(Key.create(group)))) {
       return Response
               .status(Response.Status.NOT_FOUND)
               .entity(String.format("Entry with id %d does not exist.", id))
@@ -95,7 +107,7 @@ public class EntryResource {
   public Response delete(@PathParam("id") @NotNull Long id) {
     final Group group = (Group) requestContext.getProperty(GroupRetrieverRequestFilter.GROUP);
     final Entry entry = OfyService.ofy().load().type(Entry.class).parent(group).id(id).now();
-    if ((entry == null) || (!entry.getGroupKey().equals(Key.create(Group.class, group.getId())))) {
+    if ((entry == null) || (!entry.getGroupKey().equals(Key.create(group)))) {
       return Response
               .status(Response.Status.NOT_FOUND)
               .entity(String.format("Entry with id %d does not exist.", id))
@@ -105,7 +117,7 @@ public class EntryResource {
     OfyService.ofy().transact(new Work<Entry>() {
       @Override
       public Entry run() {
-        List<EntryOperation> operations = OfyService.ofy().load().type(EntryOperation.class).ancestor(group).filter("entryKey", Key.create(Entry.class, entry.getId())).list();
+        List<EntryOperation> operations = OfyService.ofy().load().type(EntryOperation.class).ancestor(group).filter("entryKey", Key.create(entry)).list();
         OfyService.ofy().delete().entity(entry).now();
         OfyService.ofy().delete().entities(operations).now();
         LOG.info(String.format("%s deleted.", entry));
@@ -119,7 +131,7 @@ public class EntryResource {
   @Consumes(MediaType.APPLICATION_JSON)
   public Response create(final @Valid @NotNull Entry entry) {
     final Group group = (Group) requestContext.getProperty(GroupRetrieverRequestFilter.GROUP);
-    entry.setGroupKey(Key.create(Group.class, group.getId()));
+    entry.setGroupKey(Key.create(group));
     //validate users
     if (!group.getUsersMap().keySet().containsAll(entry.getByShares().keySet())
             || !group.getUsersMap().keySet().containsAll(entry.getForShares().keySet())) {
@@ -131,18 +143,18 @@ public class EntryResource {
     }
     OfyService.ofy().transact(new Work<Entry>() {
       @Override
-      public Entry run() {        
+      public Entry run() {
         OfyService.ofy().save().entity(entry).now();
         EntryOperation operation = new EntryOperation(
-                Key.create(Group.class, group.getId()),
-                Key.create(Entry.class, entry.getId()),
+                Key.create(group),
+                Key.create(entry),
                 new Date(),
                 Key.create(RegisteredUser.class, securityContext.getUserPrincipal().getName()));
         OfyService.ofy().save().entity(operation).now();
         LOG.info(String.format("%s created.", entry));
         return entry;
       }
-    });    
+    });
     return Response.ok(entry).build();
   }
 
@@ -152,7 +164,7 @@ public class EntryResource {
   public Response update(@PathParam("id") @NotNull Long id, final @Valid @NotNull Entry entry) {
     final Group group = (Group) requestContext.getProperty(GroupRetrieverRequestFilter.GROUP);
     Entry existingEntry = OfyService.ofy().load().type(Entry.class).parent(group).id(id).now();
-    if ((existingEntry == null) || (!existingEntry.getGroupKey().equals(Key.create(Group.class, group.getId())))) {
+    if ((existingEntry == null) || (!existingEntry.getGroupKey().equals(Key.create(group)))) {
       return Response
               .status(Response.Status.NOT_FOUND)
               .entity(String.format("Entry with id %d does not exist.", id))
@@ -179,39 +191,119 @@ public class EntryResource {
               .type(MediaType.TEXT_PLAIN)
               .build();
     }
-    entry.setGroupKey(Key.create(Group.class, group.getId()));
+    entry.setGroupKey(Key.create(group));
     OfyService.ofy().transact(new Work<Entry>() {
       @Override
-      public Entry run() {        
+      public Entry run() {
         OfyService.ofy().save().entity(entry).now();
         EntryOperation operation = new EntryOperation(
-                Key.create(Group.class, group.getId()),
-                Key.create(Entry.class, entry.getId()),
+                Key.create(group),
+                Key.create(entry),
                 new Date(),
                 Key.create(RegisteredUser.class, securityContext.getUserPrincipal().getName()));
         OfyService.ofy().save().entity(operation).now();
         LOG.info(String.format("%s updated.", entry));
         return entry;
       }
-    });    
+    });
     return Response.ok(entry).build();
   }
-  
+
   @GET
   @Path("{id:[0-9]+}/operations")
   public Response listOperations(@PathParam("id") @NotNull Long id) {
     Group group = (Group) requestContext.getProperty(GroupRetrieverRequestFilter.GROUP);
     Entry entry = OfyService.ofy().load().type(Entry.class).parent(group).id(id).now();
-    if ((entry == null) || (!entry.getGroupKey().equals(Key.create(Group.class, group.getId())))) {
+    if ((entry == null) || (!entry.getGroupKey().equals(Key.create(group)))) {
       return Response
               .status(Response.Status.NOT_FOUND)
               .entity(String.format("Entry with id %d does not exist.", id))
               .type(MediaType.TEXT_PLAIN)
               .build();
     }
-    List<EntryOperation> operations = OfyService.ofy().load().type(EntryOperation.class).ancestor(group).filter("entryKey", Key.create(Entry.class, entry.getId())).list();
+    List<EntryOperation> operations = OfyService.ofy().load().type(EntryOperation.class).ancestor(group).filter("entryKey", Key.create(entry)).list();
     return Response.ok(operations).build();
   }
-  
+
+  private BigDecimal remainder(Collection<BigDecimal> numbers) {
+    int maxScale = 0;
+    for (BigDecimal number : numbers) {
+      if (number.scale() > maxScale) {
+        maxScale = number.scale();
+      }
+    }
+    BigDecimal one = BigDecimal.valueOf((int) Math.pow(10, maxScale), maxScale);
+    for (BigDecimal number : numbers) {
+      one = one.subtract(number);
+    }
+    return one;
+  }
+
+  private <K> void checkAndAdjustShares(final Map<K, BigDecimal> shares) {
+    if (shares.isEmpty()) {
+      return;
+    }
+    K largestKey = shares.keySet().iterator().next();
+    for (Map.Entry<K, BigDecimal> share : shares.entrySet()) {
+      if (share.getValue().compareTo(shares.get(largestKey)) > 0) {
+        largestKey = share.getKey();
+      }
+    }
+    BigDecimal remainder = remainder(shares.values());
+    if (remainder.compareTo(BigDecimal.ZERO) != 0) {
+      shares.put(largestKey, shares.get(largestKey).add(remainder));
+    }
+  }
+
+  @POST
+  @Consumes("text/csv")
+  @Produces(MediaType.TEXT_PLAIN)
+  public Response importFromCsv(String csvData) {
+    final Group group = (Group) requestContext.getProperty(GroupRetrieverRequestFilter.GROUP);
+    final Map<String, Key<Chapter>> chapterStringsMap = new HashMap<>();
+    final List<CSVRecord> records;
+    try {
+      records = CSVParser.parse(csvData, CSVFormat.DEFAULT.withHeader()).getRecords();
+    } catch (IOException e) {
+      return Response
+              .status(Response.Status.INTERNAL_SERVER_ERROR)
+              .entity(String.format("Unexpected %s: %s.", e.getClass().getSimpleName(), e.getMessage()))
+              .build();
+    }
+    //build chapters
+    for (CSVRecord record : records) {
+      chapterStringsMap.put(record.get("chapters"), null);
+    }
+    final List<Key<Chapter>> createdChapterKeys = new ArrayList<>();
+    OfyService.ofy().transact(new Work() {
+      @Override
+      public Object run() {
+        for (String chapterStrings : chapterStringsMap.keySet()) {
+          String[] pieces = chapterStrings.split(" > ");
+          Key<Chapter> parentChapterKey = null;
+          for (int i = 0; i < pieces.length; i++) {
+            Chapter chapter = OfyService.ofy().load().type(Chapter.class)
+                    .ancestor(group)
+                    .filter("name", pieces[i])
+                    .filter("parentChapterKey", parentChapterKey)
+                    .first().now();
+            System.out.printf("looking for %s son of %s\n", pieces[i], parentChapterKey);
+            if (chapter == null) {
+              chapter = new Chapter(pieces[i], Key.create(group), parentChapterKey);
+              OfyService.ofy().save().entity(chapter).now();
+              createdChapterKeys.add(Key.create(chapter));
+              System.out.printf("Saved %s with key %s\n", chapter, Key.create(chapter));
+              // see https://cloud.google.com/appengine/articles/life_of_write
+            }
+            parentChapterKey = Key.create(chapter);
+          }
+          chapterStringsMap.put(chapterStrings, parentChapterKey);
+        }
+        return null;
+      }
+    });
+    //build entries
+    return Response.ok(String.format("Done: %d chapters and %d entries created.", createdChapterKeys.size(), 0)).build();
+  }
 
 }
