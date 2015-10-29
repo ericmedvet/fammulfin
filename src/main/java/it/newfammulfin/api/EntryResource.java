@@ -5,11 +5,18 @@
  */
 package it.newfammulfin.api;
 
+import com.fatboyindustrial.gsonjodatime.LocalDateConverter;
+import com.google.common.base.Joiner;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import com.googlecode.objectify.Key;
 import com.googlecode.objectify.Work;
 import it.newfammulfin.api.util.GroupRetrieverRequestFilter;
 import it.newfammulfin.api.util.OfyService;
 import it.newfammulfin.api.util.RetrieveGroup;
+import it.newfammulfin.api.util.converters.CurrencyUnitConverter;
+import it.newfammulfin.api.util.converters.KeyConverter;
+import it.newfammulfin.api.util.converters.MoneyConverter;
 import it.newfammulfin.model.Chapter;
 import it.newfammulfin.model.Entry;
 import it.newfammulfin.model.EntryOperation;
@@ -19,11 +26,14 @@ import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.logging.Logger;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
@@ -43,8 +53,11 @@ import javax.ws.rs.core.SecurityContext;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVRecord;
+import org.joda.money.CurrencyUnit;
 import org.joda.money.Money;
 import org.joda.time.LocalDate;
+import org.joda.time.format.DateTimeFormat;
+import org.joda.time.format.DateTimeFormatter;
 
 /**
  *
@@ -60,6 +73,8 @@ public class EntryResource {
   @Context
   private ContainerRequestContext requestContext;
   private static final Logger LOG = Logger.getLogger(EntryResource.class.getName());
+  private static final String CSV_CHAPTERS_SEPARATOR = " > ";
+  private static final String CSV_TAGS_SEPARATOR = " > ";
 
   @GET
   public Response readAll(@PathParam("groupId") @NotNull Long groupId) {
@@ -171,7 +186,7 @@ public class EntryResource {
               .type(MediaType.TEXT_PLAIN)
               .build();
     }
-    if (!existingEntry.getId().equals(id)) {
+    if (!existingEntry.getId().equals(id)||!existingEntry.getId().equals(entry.getId())) {
       LOG.warning(String.format("User %s attempted to change entry id: %d in path, %d in payload.",
               securityContext.getUserPrincipal().getName(),
               existingEntry.getId(),
@@ -255,13 +270,32 @@ public class EntryResource {
     }
   }
 
+  private <K> void checkAndBalanceZeroShares(final Map<K, BigDecimal> shares) {
+    if (shares.isEmpty()) {
+      return;
+    }
+    boolean allZero = true;
+    for (BigDecimal bigDecimal : shares.values()) {
+      if (bigDecimal.compareTo(BigDecimal.ZERO) != 0) {
+        allZero = false;
+        break;
+      }
+    }
+    if (!allZero) {
+      return;
+    }
+    for (Map.Entry<K, BigDecimal> share : shares.entrySet()) {
+      share.setValue(BigDecimal.valueOf(10000, 4).divide(BigDecimal.valueOf(shares.size()), RoundingMode.DOWN));
+    }
+  }
+
   @POST
   @Consumes("text/csv")
   @Produces(MediaType.TEXT_PLAIN)
   public Response importFromCsv(String csvData) {
-    final Group group = (Group) requestContext.getProperty(GroupRetrieverRequestFilter.GROUP);
-    final Map<String, Key<Chapter>> chapterStringsMap = new HashMap<>();
-    final List<CSVRecord> records;
+    Group group = (Group) requestContext.getProperty(GroupRetrieverRequestFilter.GROUP);
+    Map<String, Key<Chapter>> chapterStringsMap = new HashMap<>();
+    List<CSVRecord> records;
     try {
       records = CSVParser.parse(csvData, CSVFormat.DEFAULT.withHeader()).getRecords();
     } catch (IOException e) {
@@ -270,40 +304,126 @@ public class EntryResource {
               .entity(String.format("Unexpected %s: %s.", e.getClass().getSimpleName(), e.getMessage()))
               .build();
     }
-    //build chapters
-    for (CSVRecord record : records) {
-      chapterStringsMap.put(record.get("chapters"), null);
-    }
-    final List<Key<Chapter>> createdChapterKeys = new ArrayList<>();
-    OfyService.ofy().transact(new Work() {
-      @Override
-      public Object run() {
-        for (String chapterStrings : chapterStringsMap.keySet()) {
-          String[] pieces = chapterStrings.split(" > ");
-          Key<Chapter> parentChapterKey = null;
-          for (int i = 0; i < pieces.length; i++) {
-            Chapter chapter = OfyService.ofy().load().type(Chapter.class)
-                    .ancestor(group)
-                    .filter("name", pieces[i])
-                    .filter("parentChapterKey", parentChapterKey)
-                    .first().now();
-            System.out.printf("looking for %s son of %s\n", pieces[i], parentChapterKey);
-            if (chapter == null) {
-              chapter = new Chapter(pieces[i], Key.create(group), parentChapterKey);
-              OfyService.ofy().save().entity(chapter).now();
-              createdChapterKeys.add(Key.create(chapter));
-              System.out.printf("Saved %s with key %s\n", chapter, Key.create(chapter));
-              // see https://cloud.google.com/appengine/articles/life_of_write
-            }
-            parentChapterKey = Key.create(chapter);
-          }
-          chapterStringsMap.put(chapterStrings, parentChapterKey);
+    //check users
+    Set<String> userIds = new HashSet<>();
+    for (String columnName : records.get(0).toMap().keySet()) {
+      if (columnName.startsWith("by:")) {
+        String userId = columnName.replaceFirst("by:", "");
+        if (!group.getUsersMap().keySet().contains(Key.create(RegisteredUser.class, userId))) {
+          return Response
+                  .status(Response.Status.INTERNAL_SERVER_ERROR)
+                  .entity(String.format("User %s not found in this group.", userId))
+                  .build();
         }
-        return null;
+        userIds.add(userId);
       }
-    });
+    }
+    //build chapters
+    Set<String> chapterStringsSet = new HashSet<>();
+    for (CSVRecord record : records) {
+      chapterStringsSet.add(record.get("chapters"));
+    }
+    List<Key<Chapter>> createdChapterKeys = new ArrayList<>();
+    for (String chapterStrings : chapterStringsSet) {
+      List<String> pieces = Arrays.asList(chapterStrings.split(CSV_CHAPTERS_SEPARATOR));
+      Key<Chapter> parentChapterKey = null;
+      for (int i = 0; i < pieces.size(); i++) {
+        String partialChapterString = Joiner.on(CSV_CHAPTERS_SEPARATOR).join(pieces.subList(0, i + 1));
+        Key<Chapter> chapterKey = chapterStringsMap.get(partialChapterString);
+        if (chapterKey == null) {
+          chapterKey = OfyService.ofy().load().type(Chapter.class)
+                  .ancestor(group)
+                  .filter("name", pieces.get(i))
+                  .filter("parentChapterKey", parentChapterKey)
+                  .keys().first().now();
+          chapterStringsMap.put(
+                  partialChapterString,
+                  chapterKey);
+        }
+        if (chapterKey == null) {
+          Chapter chapter = new Chapter(pieces.get(i), Key.create(group), parentChapterKey);
+          OfyService.ofy().save().entity(chapter).now();
+          chapterKey = Key.create(chapter);
+          createdChapterKeys.add(chapterKey);
+          LOG.info(String.format("%s created.", chapter));
+        }
+        chapterStringsMap.put(
+                partialChapterString,
+                chapterKey);
+        parentChapterKey = chapterKey;
+      }
+    }
+    
+    GsonBuilder gsonBuilder = new GsonBuilder();
+    gsonBuilder.registerTypeAdapter(Money.class, new MoneyConverter());
+    gsonBuilder.registerTypeAdapter(LocalDate.class, new LocalDateConverter());
+    gsonBuilder.registerTypeAdapter(CurrencyUnit.class, new CurrencyUnitConverter());
+    gsonBuilder.registerTypeAdapter(Key.class, new KeyConverter());
+    gsonBuilder.enableComplexMapKeySerialization();
+    Gson gson = gsonBuilder.create();
+    
     //build entries
-    return Response.ok(String.format("Done: %d chapters and %d entries created.", createdChapterKeys.size(), 0)).build();
+    List<Key<Entry>> createdEntryKeys = new ArrayList<>();
+    DateTimeFormatter formatter = DateTimeFormat.forPattern("dd/MM/YY");
+    Key<Group> groupKey = Key.create(group);
+    for (CSVRecord record : records) {
+      Entry entry = new Entry();
+      entry.setGroupKey(groupKey);
+      entry.setDate(LocalDate.parse(record.get("date"), formatter));
+      entry.setAmount(Money.of(CurrencyUnit.of(record.get("currency").toUpperCase()), Double.parseDouble(record.get("value"))));
+      entry.setChapterKey(chapterStringsMap.get(record.get("chapters")));
+      entry.setPayee(record.get("payee"));
+      for (String tag : record.get("tags").split(CSV_TAGS_SEPARATOR)) {
+        if (!tag.trim().isEmpty()) {
+          entry.getTags().add(tag);
+        }
+      }
+      entry.setDescription(record.get("description"));
+      entry.setNote(record.get("notes"));
+      //by shares
+      for (String userId : userIds) {
+        String share = record.get("by:" + userId);
+        double value;
+        if (share.contains("%")) {
+          entry.setByPercentage(true);
+          value = Double.parseDouble(share.replace("%", ""));
+          value = value / 100d;
+        } else {
+          value = Double.parseDouble(share);
+          value = value / entry.getAmount().getAmount().doubleValue();
+        }
+        entry.getByShares().put(Key.create(RegisteredUser.class, userId), BigDecimal.valueOf(value).setScale(5, RoundingMode.DOWN));
+      }
+      checkAndBalanceZeroShares(entry.getByShares());
+      checkAndAdjustShares(entry.getByShares());
+      //for shares
+      for (String userId : userIds) {
+        String share = record.get("for:" + userId);
+        double value;
+        if (share.contains("%")) {
+          entry.setForPercentage(true);
+          value = Double.parseDouble(share.replace("%", ""));
+          value = value / 100d;
+        } else {
+          value = Double.parseDouble(share);
+          value = value / entry.getAmount().getAmount().doubleValue();
+        }
+        entry.getForShares().put(Key.create(RegisteredUser.class, userId), BigDecimal.valueOf(value).setScale(5, RoundingMode.DOWN));
+      }
+      checkAndBalanceZeroShares(entry.getForShares());
+      checkAndAdjustShares(entry.getForShares());
+      System.out.println("saving "+gson.toJson(entry));
+      OfyService.ofy().save().entity(entry).now();
+      createdEntryKeys.add(Key.create(entry));
+      EntryOperation operation = new EntryOperation(
+              Key.create(group),
+              Key.create(entry),
+              new Date(),
+              Key.create(RegisteredUser.class, securityContext.getUserPrincipal().getName()));
+      OfyService.ofy().save().entity(operation).now();
+      LOG.info(String.format("%s created.", entry));
+    }
+    return Response.ok(String.format("Done: %d chapters and %d entries created.", createdChapterKeys.size(), createdEntryKeys.size())).build();
   }
 
 }

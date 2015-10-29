@@ -115,7 +115,7 @@ public class ChapterResource {
               .type(MediaType.TEXT_PLAIN)
               .build();
     }
-    if (!existingChapter.getId().equals(id)) {
+    if (!existingChapter.getId().equals(id)||!existingChapter.getId().equals(chapter.getId())) {
       LOG.warning(String.format("User %s attempted to change chapter id: %d in path, %d in payload.",
               securityContext.getUserPrincipal().getName(),
               existingChapter.getId(),
