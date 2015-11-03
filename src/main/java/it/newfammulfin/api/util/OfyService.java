@@ -9,6 +9,7 @@ import com.googlecode.objectify.Objectify;
 import com.googlecode.objectify.ObjectifyService;
 import com.googlecode.objectify.impl.translate.opt.BigDecimalLongTranslatorFactory;
 import com.sappenin.objectify.translate.JodaMoneyEmbeddedEntityTranslatorFactory;
+import it.newfammulfin.api.EntryResource;
 import it.newfammulfin.model.Chapter;
 import it.newfammulfin.model.Entry;
 import it.newfammulfin.model.EntryOperation;
@@ -24,7 +25,7 @@ public class OfyService {
   static {
     ObjectifyService.factory().getTranslators().add(new JodaMoneyEmbeddedEntityTranslatorFactory());
     ObjectifyService.factory().getTranslators().add(new CurrencyUnitStringTranslatorFactory());
-    ObjectifyService.factory().getTranslators().add(new BigDecimalLongTranslatorFactory());
+    ObjectifyService.factory().getTranslators().add(new BigDecimalLongTranslatorFactory((long)Math.pow(10, EntryResource.DEFAULT_SHARE_SCALE+1)));
     ObjectifyService.register(Entry.class);
     ObjectifyService.register(EntryOperation.class);
     ObjectifyService.register(Chapter.class);

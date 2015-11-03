@@ -48,17 +48,17 @@ public class Entry {
   private Key<Chapter> chapterKey;
   @Index
   @EachElementPattern(regexp = "[a-zA-Z'\"-&][a-zA-Z0-9'\"-& ]{0,30}[a-zA-Z'\"-&]")
-  private final Set<String> tags = new LinkedHashSet<>();
+  private Set<String> tags = new LinkedHashSet<>();
   private String description;
   private String note;
   @EachElementPattern(regexp = "^(https?|ftp|file)://[-a-zA-Z0-9+&@#/%?=~_|!:,.;]*[-a-zA-Z0-9+&@#/%=~_|]") //see http://stackoverflow.com/a/15518889/1003056
-  private final List<String> attachmentUrls = new ArrayList<>();
+  private List<String> attachmentUrls = new ArrayList<>();
   @Index
   private Periodicity periodicity = Periodicity.NONE;
   @Shares
-  private final Map<Key<RegisteredUser>, BigDecimal> byShares = new LinkedHashMap<>();
+  private Map<Key<RegisteredUser>, BigDecimal> byShares = new LinkedHashMap<>();
   @Shares
-  private final Map<Key<RegisteredUser>, BigDecimal> forShares = new LinkedHashMap<>();
+  private Map<Key<RegisteredUser>, BigDecimal> forShares = new LinkedHashMap<>();
   private boolean byPercentage;
   private boolean forPercentage;
 

@@ -5,18 +5,12 @@
  */
 package it.newfammulfin.api;
 
-import com.fatboyindustrial.gsonjodatime.LocalDateConverter;
 import com.google.common.base.Joiner;
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
 import com.googlecode.objectify.Key;
 import com.googlecode.objectify.Work;
 import it.newfammulfin.api.util.GroupRetrieverRequestFilter;
 import it.newfammulfin.api.util.OfyService;
 import it.newfammulfin.api.util.RetrieveGroup;
-import it.newfammulfin.api.util.converters.CurrencyUnitConverter;
-import it.newfammulfin.api.util.converters.KeyConverter;
-import it.newfammulfin.api.util.converters.MoneyConverter;
 import it.newfammulfin.model.Chapter;
 import it.newfammulfin.model.Entry;
 import it.newfammulfin.model.EntryOperation;
@@ -75,6 +69,7 @@ public class EntryResource {
   private static final Logger LOG = Logger.getLogger(EntryResource.class.getName());
   private static final String CSV_CHAPTERS_SEPARATOR = " > ";
   private static final String CSV_TAGS_SEPARATOR = " > ";
+  public static final int DEFAULT_SHARE_SCALE = 4;
 
   @GET
   public Response readAll(@PathParam("groupId") @NotNull Long groupId) {
@@ -285,7 +280,7 @@ public class EntryResource {
       return;
     }
     for (Map.Entry<K, BigDecimal> share : shares.entrySet()) {
-      share.setValue(BigDecimal.valueOf(10000, 4).divide(BigDecimal.valueOf(shares.size()), RoundingMode.DOWN));
+      share.setValue(BigDecimal.valueOf((long)Math.pow(10, DEFAULT_SHARE_SCALE), DEFAULT_SHARE_SCALE).divide(BigDecimal.valueOf(shares.size()), RoundingMode.DOWN));
     }
   }
 
@@ -353,15 +348,6 @@ public class EntryResource {
         parentChapterKey = chapterKey;
       }
     }
-    
-    GsonBuilder gsonBuilder = new GsonBuilder();
-    gsonBuilder.registerTypeAdapter(Money.class, new MoneyConverter());
-    gsonBuilder.registerTypeAdapter(LocalDate.class, new LocalDateConverter());
-    gsonBuilder.registerTypeAdapter(CurrencyUnit.class, new CurrencyUnitConverter());
-    gsonBuilder.registerTypeAdapter(Key.class, new KeyConverter());
-    gsonBuilder.enableComplexMapKeySerialization();
-    Gson gson = gsonBuilder.create();
-    
     //build entries
     List<Key<Entry>> createdEntryKeys = new ArrayList<>();
     DateTimeFormatter formatter = DateTimeFormat.forPattern("dd/MM/YY");
@@ -392,7 +378,7 @@ public class EntryResource {
           value = Double.parseDouble(share);
           value = value / entry.getAmount().getAmount().doubleValue();
         }
-        entry.getByShares().put(Key.create(RegisteredUser.class, userId), BigDecimal.valueOf(value).setScale(5, RoundingMode.DOWN));
+        entry.getByShares().put(Key.create(RegisteredUser.class, userId), BigDecimal.valueOf(value).setScale(DEFAULT_SHARE_SCALE, RoundingMode.DOWN));
       }
       checkAndBalanceZeroShares(entry.getByShares());
       checkAndAdjustShares(entry.getByShares());
@@ -408,11 +394,10 @@ public class EntryResource {
           value = Double.parseDouble(share);
           value = value / entry.getAmount().getAmount().doubleValue();
         }
-        entry.getForShares().put(Key.create(RegisteredUser.class, userId), BigDecimal.valueOf(value).setScale(5, RoundingMode.DOWN));
+        entry.getForShares().put(Key.create(RegisteredUser.class, userId), BigDecimal.valueOf(value).setScale(DEFAULT_SHARE_SCALE, RoundingMode.DOWN));
       }
       checkAndBalanceZeroShares(entry.getForShares());
       checkAndAdjustShares(entry.getForShares());
-      System.out.println("saving "+gson.toJson(entry));
       OfyService.ofy().save().entity(entry).now();
       createdEntryKeys.add(Key.create(entry));
       EntryOperation operation = new EntryOperation(
