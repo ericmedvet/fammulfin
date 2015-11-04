@@ -11,6 +11,7 @@ import com.googlecode.objectify.Work;
 import it.newfammulfin.api.util.GroupRetrieverRequestFilter;
 import it.newfammulfin.api.util.OfyService;
 import it.newfammulfin.api.util.RetrieveGroup;
+import it.newfammulfin.api.util.Util;
 import it.newfammulfin.model.Chapter;
 import it.newfammulfin.model.Entry;
 import it.newfammulfin.model.EntryOperation;
@@ -21,7 +22,6 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -73,6 +73,7 @@ public class EntryResource {
 
   @GET
   public Response readAll(@PathParam("groupId") @NotNull Long groupId) {
+    //TODO add querying capability
     Group group = (Group) requestContext.getProperty(GroupRetrieverRequestFilter.GROUP);
     List<Entry> entries = OfyService.ofy().load().type(Entry.class).ancestor(group).list();
     return Response.ok(entries).build();
@@ -88,12 +89,12 @@ public class EntryResource {
     entry.setDate(LocalDate.now());
     entry.setPayee("Pub");
     entry.setDescription("Beer");
-    entry.getByShares().put(userKey, BigDecimal.ONE);
-    for (Key<RegisteredUser> groupUserKey : group.getUsersMap().keySet()) {
-      entry.getForShares().put(groupUserKey, BigDecimal.valueOf(1000, 3).divide(BigDecimal.valueOf(group.getUsersMap().size()), RoundingMode.DOWN));
+    entry.getTags().add("Fun");
+    entry.getByShares().put(userKey, entry.getAmount().getAmount());
+    for (Key<RegisteredUser> otherSserKey : group.getUsersMap().keySet()) {
+      entry.getForShares().put(otherSserKey, BigDecimal.ZERO);
     }
-    checkAndAdjustShares(entry.getByShares());
-    checkAndAdjustShares(entry.getForShares());
+    checkAndBalanceZeroShares(entry.getForShares(), entry.getAmount().getAmount());
     return Response.ok(entry).build();
   }
 
@@ -110,6 +111,19 @@ public class EntryResource {
               .build();
     }
     return Response.ok(entry).build();
+  }
+
+  //debug method, should remove in production
+  @DELETE
+  @Produces(MediaType.TEXT_PLAIN)
+  public Response deleteAll() {
+    Group group = (Group) requestContext.getProperty(GroupRetrieverRequestFilter.GROUP);
+    List<Key<?>> keys = new ArrayList<>();
+    keys.addAll(OfyService.ofy().load().type(Entry.class).ancestor(group).keys().list());
+    keys.addAll(OfyService.ofy().load().type(EntryOperation.class).ancestor(group).keys().list());
+    keys.addAll(OfyService.ofy().load().type(Chapter.class).ancestor(group).keys().list());
+    OfyService.ofy().delete().keys(keys).now();
+    return Response.ok(String.format("Removed %d entities.", keys.size())).build();
   }
 
   @DELETE
@@ -181,7 +195,7 @@ public class EntryResource {
               .type(MediaType.TEXT_PLAIN)
               .build();
     }
-    if (!existingEntry.getId().equals(id)||!existingEntry.getId().equals(entry.getId())) {
+    if (!existingEntry.getId().equals(id) || !existingEntry.getId().equals(entry.getId())) {
       LOG.warning(String.format("User %s attempted to change entry id: %d in path, %d in payload.",
               securityContext.getUserPrincipal().getName(),
               existingEntry.getId(),
@@ -221,7 +235,7 @@ public class EntryResource {
 
   @GET
   @Path("{id:[0-9]+}/operations")
-  public Response listOperations(@PathParam("id") @NotNull Long id) {
+  public Response readOperations(@PathParam("id") @NotNull Long id) {
     Group group = (Group) requestContext.getProperty(GroupRetrieverRequestFilter.GROUP);
     Entry entry = OfyService.ofy().load().type(Entry.class).parent(group).id(id).now();
     if ((entry == null) || (!entry.getGroupKey().equals(Key.create(group)))) {
@@ -235,62 +249,40 @@ public class EntryResource {
     return Response.ok(operations).build();
   }
 
-  private BigDecimal remainder(Collection<BigDecimal> numbers) {
-    int maxScale = 0;
-    for (BigDecimal number : numbers) {
-      if (number.scale() > maxScale) {
-        maxScale = number.scale();
-      }
-    }
-    BigDecimal one = BigDecimal.valueOf((int) Math.pow(10, maxScale), maxScale);
-    for (BigDecimal number : numbers) {
-      one = one.subtract(number);
-    }
-    return one;
-  }
-
-  private <K> void checkAndAdjustShares(final Map<K, BigDecimal> shares) {
+  private <K> boolean checkAndBalanceZeroShares(final Map<K, BigDecimal> shares, BigDecimal expectedSum) {
     if (shares.isEmpty()) {
-      return;
+      return false;
+    }
+    boolean equalShares = false;
+    if (!Util.containsNotZero(shares.values())) {
+      equalShares = true;
+      expectedSum = expectedSum.setScale(Math.max(DEFAULT_SHARE_SCALE, expectedSum.scale()));
+      for (Map.Entry<K, BigDecimal> shareEntry : shares.entrySet()) {
+        shareEntry.setValue(expectedSum.divide(BigDecimal.valueOf(shares.size()), RoundingMode.DOWN));
+      }
     }
     K largestKey = shares.keySet().iterator().next();
     for (Map.Entry<K, BigDecimal> share : shares.entrySet()) {
-      if (share.getValue().compareTo(shares.get(largestKey)) > 0) {
+      if (share.getValue().abs().compareTo(shares.get(largestKey).abs()) > 0) {
         largestKey = share.getKey();
       }
     }
-    BigDecimal remainder = remainder(shares.values());
+    BigDecimal remainder = Util.remainder(shares.values(), expectedSum);
     if (remainder.compareTo(BigDecimal.ZERO) != 0) {
       shares.put(largestKey, shares.get(largestKey).add(remainder));
     }
-  }
-
-  private <K> void checkAndBalanceZeroShares(final Map<K, BigDecimal> shares) {
-    if (shares.isEmpty()) {
-      return;
-    }
-    boolean allZero = true;
-    for (BigDecimal bigDecimal : shares.values()) {
-      if (bigDecimal.compareTo(BigDecimal.ZERO) != 0) {
-        allZero = false;
-        break;
-      }
-    }
-    if (!allZero) {
-      return;
-    }
-    for (Map.Entry<K, BigDecimal> share : shares.entrySet()) {
-      share.setValue(BigDecimal.valueOf((long)Math.pow(10, DEFAULT_SHARE_SCALE), DEFAULT_SHARE_SCALE).divide(BigDecimal.valueOf(shares.size()), RoundingMode.DOWN));
-    }
+    return equalShares;
   }
 
   @POST
   @Consumes("text/csv")
   @Produces(MediaType.TEXT_PLAIN)
   public Response importFromCsv(String csvData) {
-    Group group = (Group) requestContext.getProperty(GroupRetrieverRequestFilter.GROUP);
-    Map<String, Key<Chapter>> chapterStringsMap = new HashMap<>();
-    List<CSVRecord> records;
+    //TODO add invertSign query param
+    //TODO remove empty chapter
+    final Group group = (Group) requestContext.getProperty(GroupRetrieverRequestFilter.GROUP);
+    final Map<String, Key<Chapter>> chapterStringsMap = new HashMap<>();
+    final List<CSVRecord> records;
     try {
       records = CSVParser.parse(csvData, CSVFormat.DEFAULT.withHeader()).getRecords();
     } catch (IOException e) {
@@ -300,7 +292,7 @@ public class EntryResource {
               .build();
     }
     //check users
-    Set<String> userIds = new HashSet<>();
+    final Set<String> userIds = new HashSet<>();
     for (String columnName : records.get(0).toMap().keySet()) {
       if (columnName.startsWith("by:")) {
         String userId = columnName.replaceFirst("by:", "");
@@ -314,101 +306,123 @@ public class EntryResource {
       }
     }
     //build chapters
-    Set<String> chapterStringsSet = new HashSet<>();
+    final Set<String> chapterStringsSet = new HashSet<>();
     for (CSVRecord record : records) {
       chapterStringsSet.add(record.get("chapters"));
     }
-    List<Key<Chapter>> createdChapterKeys = new ArrayList<>();
-    for (String chapterStrings : chapterStringsSet) {
-      List<String> pieces = Arrays.asList(chapterStrings.split(CSV_CHAPTERS_SEPARATOR));
-      Key<Chapter> parentChapterKey = null;
-      for (int i = 0; i < pieces.size(); i++) {
-        String partialChapterString = Joiner.on(CSV_CHAPTERS_SEPARATOR).join(pieces.subList(0, i + 1));
-        Key<Chapter> chapterKey = chapterStringsMap.get(partialChapterString);
-        if (chapterKey == null) {
-          chapterKey = OfyService.ofy().load().type(Chapter.class)
-                  .ancestor(group)
-                  .filter("name", pieces.get(i))
-                  .filter("parentChapterKey", parentChapterKey)
-                  .keys().first().now();
-          chapterStringsMap.put(
-                  partialChapterString,
-                  chapterKey);
+    final List<Key<?>> createdKeys = new ArrayList<>();
+    try {
+      OfyService.ofy().transact(new Work<List<Key<?>>>() {
+        @Override
+        public List<Key<?>> run() {
+          for (String chapterStrings : chapterStringsSet) {
+            List<String> pieces = Arrays.asList(chapterStrings.split(CSV_CHAPTERS_SEPARATOR));
+            Key<Chapter> parentChapterKey = null;
+            for (int i = 0; i < pieces.size(); i++) {
+              String partialChapterString = Joiner.on(CSV_CHAPTERS_SEPARATOR).join(pieces.subList(0, i + 1));
+              Key<Chapter> chapterKey = chapterStringsMap.get(partialChapterString);
+              if (chapterKey == null) {
+                chapterKey = OfyService.ofy().load().type(Chapter.class)
+                        .ancestor(group)
+                        .filter("name", pieces.get(i))
+                        .filter("parentChapterKey", parentChapterKey)
+                        .keys().first().now();
+                chapterStringsMap.put(
+                        partialChapterString,
+                        chapterKey);
+              }
+              if (chapterKey == null) {
+                Chapter chapter = new Chapter(pieces.get(i), Key.create(group), parentChapterKey);
+                OfyService.ofy().save().entity(chapter).now();
+                chapterKey = Key.create(chapter);
+                createdKeys.add(chapterKey);
+                LOG.info(String.format("%s created.", chapter));
+              }
+              chapterStringsMap.put(
+                      partialChapterString,
+                      chapterKey);
+              parentChapterKey = chapterKey;
+            }
+          }
+          //build entries
+          DateTimeFormatter formatter = DateTimeFormat.forPattern("dd/MM/YY");
+          Key<Group> groupKey = Key.create(group);
+          for (CSVRecord record : records) {
+            Entry entry = new Entry();
+            entry.setGroupKey(groupKey);
+            entry.setDate(LocalDate.parse(record.get("date"), formatter));
+            entry.setAmount(Money.of(CurrencyUnit.of(record.get("currency").toUpperCase()), Double.parseDouble(record.get("value"))));
+            entry.setChapterKey(chapterStringsMap.get(record.get("chapters")));
+            entry.setPayee(record.get("payee"));
+            int scale = Math.max(DEFAULT_SHARE_SCALE, entry.getAmount().getScale());
+            for (String tag : record.get("tags").split(CSV_TAGS_SEPARATOR)) {
+              if (!tag.trim().isEmpty()) {
+                entry.getTags().add(tag);
+              }
+            }
+            entry.setDescription(record.get("description"));
+            entry.setNote(record.get("notes"));
+            //by shares
+            for (String userId : userIds) {
+              String share = record.get("by:" + userId);
+              double value;
+              if (share.contains("%")) {
+                entry.setByPercentage(true);
+                value = Double.parseDouble(share.replace("%", ""));
+                value = entry.getAmount().getAmount().doubleValue() * value / 100d;
+              } else {
+                value = Double.parseDouble(share);
+              }
+              entry.getByShares().put(Key.create(RegisteredUser.class, userId), BigDecimal.valueOf(value).setScale(scale, RoundingMode.DOWN));
+            }
+            boolean equalByShares = checkAndBalanceZeroShares(entry.getByShares(), entry.getAmount().getAmount());
+            entry.setByPercentage(entry.isByPercentage()||equalByShares);
+            //for shares
+            for (String userId : userIds) {
+              String share = record.get("for:" + userId);
+              double value;
+              if (share.contains("%")) {
+                entry.setForPercentage(true);
+                value = Double.parseDouble(share.replace("%", ""));
+                value = entry.getAmount().getAmount().doubleValue() * value / 100d;
+              } else {
+                value = Double.parseDouble(share);
+              }
+              entry.getForShares().put(Key.create(RegisteredUser.class, userId), BigDecimal.valueOf(value).setScale(scale, RoundingMode.DOWN));
+            }
+            boolean equalForShares = checkAndBalanceZeroShares(entry.getForShares(), entry.getAmount().getAmount());
+            entry.setForPercentage(entry.isForPercentage()||equalForShares);
+            OfyService.ofy().save().entity(entry).now();
+            createdKeys.add(Key.create(entry));
+            EntryOperation operation = new EntryOperation(
+                    Key.create(group),
+                    Key.create(entry),
+                    new Date(),
+                    Key.create(RegisteredUser.class, securityContext.getUserPrincipal().getName()));
+            OfyService.ofy().save().entity(operation).now();
+            LOG.info(String.format("%s created.", entry));
+          }
+          return createdKeys;
         }
-        if (chapterKey == null) {
-          Chapter chapter = new Chapter(pieces.get(i), Key.create(group), parentChapterKey);
-          OfyService.ofy().save().entity(chapter).now();
-          chapterKey = Key.create(chapter);
-          createdChapterKeys.add(chapterKey);
-          LOG.info(String.format("%s created.", chapter));
+      });
+      //count keys
+      int numberOfCreatedChapters = 0;
+      int numberOfCreatedEntries = 0;
+      for (Key<?> key : createdKeys) {
+        if (key.getKind().equals(Entry.class.getSimpleName())) {
+          numberOfCreatedEntries = numberOfCreatedEntries + 1;
+        } else if (key.getKind().equals(Chapter.class.getSimpleName())) {
+          numberOfCreatedChapters = numberOfCreatedChapters + 1;
         }
-        chapterStringsMap.put(
-                partialChapterString,
-                chapterKey);
-        parentChapterKey = chapterKey;
       }
+      return Response.ok(String.format("Done: %d chapters and %d entries created.", numberOfCreatedChapters, numberOfCreatedEntries)).build();
+    } catch (RuntimeException e) {
+      LOG.warning(String.format("Unexpected %s: %s.", e.getClass().getSimpleName(), e.getMessage()));
+      return Response
+              .status(Response.Status.INTERNAL_SERVER_ERROR)
+              .entity(String.format("Unexpected %s: %s.", e.getClass().getSimpleName(), e.getMessage()))
+              .build();
     }
-    //build entries
-    List<Key<Entry>> createdEntryKeys = new ArrayList<>();
-    DateTimeFormatter formatter = DateTimeFormat.forPattern("dd/MM/YY");
-    Key<Group> groupKey = Key.create(group);
-    for (CSVRecord record : records) {
-      Entry entry = new Entry();
-      entry.setGroupKey(groupKey);
-      entry.setDate(LocalDate.parse(record.get("date"), formatter));
-      entry.setAmount(Money.of(CurrencyUnit.of(record.get("currency").toUpperCase()), Double.parseDouble(record.get("value"))));
-      entry.setChapterKey(chapterStringsMap.get(record.get("chapters")));
-      entry.setPayee(record.get("payee"));
-      for (String tag : record.get("tags").split(CSV_TAGS_SEPARATOR)) {
-        if (!tag.trim().isEmpty()) {
-          entry.getTags().add(tag);
-        }
-      }
-      entry.setDescription(record.get("description"));
-      entry.setNote(record.get("notes"));
-      //by shares
-      for (String userId : userIds) {
-        String share = record.get("by:" + userId);
-        double value;
-        if (share.contains("%")) {
-          entry.setByPercentage(true);
-          value = Double.parseDouble(share.replace("%", ""));
-          value = value / 100d;
-        } else {
-          value = Double.parseDouble(share);
-          value = value / entry.getAmount().getAmount().doubleValue();
-        }
-        entry.getByShares().put(Key.create(RegisteredUser.class, userId), BigDecimal.valueOf(value).setScale(DEFAULT_SHARE_SCALE, RoundingMode.DOWN));
-      }
-      checkAndBalanceZeroShares(entry.getByShares());
-      checkAndAdjustShares(entry.getByShares());
-      //for shares
-      for (String userId : userIds) {
-        String share = record.get("for:" + userId);
-        double value;
-        if (share.contains("%")) {
-          entry.setForPercentage(true);
-          value = Double.parseDouble(share.replace("%", ""));
-          value = value / 100d;
-        } else {
-          value = Double.parseDouble(share);
-          value = value / entry.getAmount().getAmount().doubleValue();
-        }
-        entry.getForShares().put(Key.create(RegisteredUser.class, userId), BigDecimal.valueOf(value).setScale(DEFAULT_SHARE_SCALE, RoundingMode.DOWN));
-      }
-      checkAndBalanceZeroShares(entry.getForShares());
-      checkAndAdjustShares(entry.getForShares());
-      OfyService.ofy().save().entity(entry).now();
-      createdEntryKeys.add(Key.create(entry));
-      EntryOperation operation = new EntryOperation(
-              Key.create(group),
-              Key.create(entry),
-              new Date(),
-              Key.create(RegisteredUser.class, securityContext.getUserPrincipal().getName()));
-      OfyService.ofy().save().entity(operation).now();
-      LOG.info(String.format("%s created.", entry));
-    }
-    return Response.ok(String.format("Done: %d chapters and %d entries created.", createdChapterKeys.size(), createdEntryKeys.size())).build();
   }
 
 }

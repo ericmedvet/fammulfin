@@ -32,6 +32,7 @@ import org.joda.time.LocalDate;
  * @author eric
  */
 @Entity
+@Shares
 public class Entry {
   
   @Id
@@ -55,9 +56,7 @@ public class Entry {
   private List<String> attachmentUrls = new ArrayList<>();
   @Index
   private Periodicity periodicity = Periodicity.NONE;
-  @Shares
   private Map<Key<RegisteredUser>, BigDecimal> byShares = new LinkedHashMap<>();
-  @Shares
   private Map<Key<RegisteredUser>, BigDecimal> forShares = new LinkedHashMap<>();
   private boolean byPercentage;
   private boolean forPercentage;

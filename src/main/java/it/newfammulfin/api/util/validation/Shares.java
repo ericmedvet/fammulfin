@@ -16,7 +16,7 @@ import javax.validation.Payload;
  *
  * @author eric
  */
-@Target({ElementType.METHOD, ElementType.FIELD, ElementType.PARAMETER})
+@Target({ElementType.TYPE})
 @Retention(RetentionPolicy.RUNTIME)
 @Constraint(validatedBy = SharesValidator.class)
 public @interface Shares {

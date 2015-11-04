@@ -5,9 +5,10 @@
  */
 package it.newfammulfin.api.util.validation;
 
-import it.newfammulfin.api.util.validation.Shares;
+import it.newfammulfin.api.util.Util;
+import it.newfammulfin.model.Entry;
 import java.math.BigDecimal;
-import java.util.Map;
+import java.util.Collection;
 import javax.validation.ConstraintValidator;
 import javax.validation.ConstraintValidatorContext;
 
@@ -15,24 +16,22 @@ import javax.validation.ConstraintValidatorContext;
  *
  * @author eric
  */
-public class SharesValidator implements ConstraintValidator<Shares, Map<?, BigDecimal>>{
+public class SharesValidator implements ConstraintValidator<Shares, Entry> {
 
   @Override
   public void initialize(Shares a) {
   }
 
   @Override
-  public boolean isValid(Map<?, BigDecimal> map, ConstraintValidatorContext cvc) {
-    BigDecimal sum = new BigDecimal(0);
-    if (map!=null) {
-      for (BigDecimal value : map.values()) {
-        sum = sum.add(value);
-        if (value.compareTo(BigDecimal.ZERO)<0) {
-          return false;
-        }
-      }
+  public boolean isValid(Entry entry, ConstraintValidatorContext cvc) {
+    boolean outcome = true;
+    outcome = outcome&&(Util.sum(entry.getByShares().values()).compareTo(entry.getAmount().getAmount()) == 0);
+    outcome = outcome&&(Util.sum(entry.getForShares().values()).compareTo(entry.getAmount().getAmount()) == 0);
+    if (entry.getAmount().getAmount().compareTo(BigDecimal.ZERO)==0) {
+      outcome = outcome&&Util.containsNotZero(entry.getByShares().values());
+      outcome = outcome&&(!Util.containsNotZero(entry.getForShares().values()));
     }
-    return sum.compareTo(BigDecimal.ONE)==0;
+    return outcome;
   }
-  
+
 }
