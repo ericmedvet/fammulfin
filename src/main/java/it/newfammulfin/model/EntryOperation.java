@@ -20,6 +20,12 @@ import java.util.Objects;
 @Entity
 public class EntryOperation {
   
+  public enum Type {
+    IMPORT,
+    CREATE,
+    UPDATE
+  }
+  
   @Id
   private Long id;
   @Parent
@@ -27,16 +33,20 @@ public class EntryOperation {
   @Index
   private Key<Entry> entryKey;
   private Date date;
+  @Index
   private Key<RegisteredUser> userKey;
+  @Index
+  private Type type;
 
   public EntryOperation() {
   }
 
-  public EntryOperation(Key<Group> groupKey, Key<Entry> entryKey, Date date, Key<RegisteredUser> userKey) {
+  public EntryOperation(Key<Group> groupKey, Key<Entry> entryKey, Date date, Key<RegisteredUser> userKey, Type type) {
     this.groupKey = groupKey;
     this.entryKey = entryKey;
     this.date = date;
     this.userKey = userKey;
+    this.type = type;
   }
 
   public Long getId() {
@@ -73,6 +83,14 @@ public class EntryOperation {
 
   public void setUserKey(Key<RegisteredUser> userKey) {
     this.userKey = userKey;
+  }
+
+  public Type getType() {
+    return type;
+  }
+
+  public void setType(Type type) {
+    this.type = type;
   }
 
   @Override

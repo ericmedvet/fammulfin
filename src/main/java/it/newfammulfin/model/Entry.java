@@ -34,7 +34,13 @@ import org.joda.time.LocalDate;
 @Entity
 @Shares
 public class Entry {
-  
+
+  public enum Periodicity {
+    NONE,
+    MONTHLY,
+    YEARLY
+  }
+
   @Id
   private Long id;
   @Parent
@@ -43,7 +49,11 @@ public class Entry {
   private LocalDate date;
   @com.sappenin.objectify.annotation.Money
   private Money amount;
-  @Index @NotNull @NotBlank @Pattern(regexp = "[a-zA-Z'\"-&][a-zA-Z0-9'\"-& ][a-zA-Z'\"-&]*") @Size(max = 128)
+  @Index
+  @NotNull
+  @NotBlank
+  @Pattern(regexp = "[a-zA-Z'\"-&][a-zA-Z0-9'\"-& ][a-zA-Z'\"-&]*")
+  @Size(max = 128)
   private String payee;
   @Index
   private Key<Chapter> chapterKey;
@@ -63,7 +73,7 @@ public class Entry {
 
   public Entry() {
   }
-  
+
   public Long getId() {
     return id;
   }
@@ -162,7 +172,7 @@ public class Entry {
 
   public void setForPercentage(boolean forPercentage) {
     this.forPercentage = forPercentage;
-  }  
+  }
 
   @Override
   public int hashCode() {

@@ -8,6 +8,7 @@ package it.newfammulfin.api;
 import com.google.common.base.Joiner;
 import com.googlecode.objectify.Key;
 import com.googlecode.objectify.Work;
+import com.googlecode.objectify.cmd.Query;
 import it.newfammulfin.api.util.GroupRetrieverRequestFilter;
 import it.newfammulfin.api.util.OfyService;
 import it.newfammulfin.api.util.RetrieveGroup;
@@ -33,12 +34,14 @@ import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
+import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
 import javax.ws.rs.container.ContainerRequestContext;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
@@ -72,10 +75,31 @@ public class EntryResource {
   public static final int DEFAULT_SHARE_SCALE = 4;
 
   @GET
-  public Response readAll(@PathParam("groupId") @NotNull Long groupId) {
-    //TODO add querying capability
+  public Response readAll(
+          @PathParam("groupId") @NotNull Long groupId,
+          @QueryParam("year") Integer year,
+          @QueryParam("month") Integer month,
+          @QueryParam("chapterKey") String chapterKeyString,
+          @QueryParam("payee") String payee) {
     Group group = (Group) requestContext.getProperty(GroupRetrieverRequestFilter.GROUP);
-    List<Entry> entries = OfyService.ofy().load().type(Entry.class).ancestor(group).list();
+    Query<Entry> query = OfyService.ofy().load().type(Entry.class).ancestor(group);
+    if (year!=null&&month==null) {
+      query = query.filter("date >=", new LocalDate(year, 1, 1)).filter("date <", new LocalDate(year+1, 1, 1));
+    }
+    if (year!=null&&month!=null) {
+      if (month<12) {
+        query = query.filter("date >=", new LocalDate(year, month, 1)).filter("date <", new LocalDate(year, month+1, 1));
+      } else {
+        query = query.filter("date >=", new LocalDate(year, 12, 1)).filter("date <", new LocalDate(year+1, 1, 1));
+      }
+    }
+    if (chapterKeyString!=null&&!chapterKeyString.isEmpty()) {
+      query = query.filter("chapterKey", Key.create(chapterKeyString));
+    }
+    if (payee!=null&&!payee.isEmpty()) {
+      query = query.filter("payee", payee);
+    }
+    List<Entry> entries = query.list();
     return Response.ok(entries).build();
   }
 
@@ -173,7 +197,8 @@ public class EntryResource {
                 Key.create(group),
                 Key.create(entry),
                 new Date(),
-                Key.create(RegisteredUser.class, securityContext.getUserPrincipal().getName()));
+                Key.create(RegisteredUser.class, securityContext.getUserPrincipal().getName()),
+                EntryOperation.Type.CREATE);
         OfyService.ofy().save().entity(operation).now();
         LOG.info(String.format("%s created.", entry));
         return entry;
@@ -224,7 +249,8 @@ public class EntryResource {
                 Key.create(group),
                 Key.create(entry),
                 new Date(),
-                Key.create(RegisteredUser.class, securityContext.getUserPrincipal().getName()));
+                Key.create(RegisteredUser.class, securityContext.getUserPrincipal().getName()),
+                EntryOperation.Type.UPDATE);
         OfyService.ofy().save().entity(operation).now();
         LOG.info(String.format("%s updated.", entry));
         return entry;
@@ -277,9 +303,7 @@ public class EntryResource {
   @POST
   @Consumes("text/csv")
   @Produces(MediaType.TEXT_PLAIN)
-  public Response importFromCsv(String csvData) {
-    //TODO add invertSign query param
-    //TODO remove empty chapter
+  public Response importFromCsv(String csvData, @DefaultValue("false") @QueryParam("invertSign") final boolean invertSign) {
     final Group group = (Group) requestContext.getProperty(GroupRetrieverRequestFilter.GROUP);
     final Map<String, Key<Chapter>> chapterStringsMap = new HashMap<>();
     final List<CSVRecord> records;
@@ -351,10 +375,13 @@ public class EntryResource {
             Entry entry = new Entry();
             entry.setGroupKey(groupKey);
             entry.setDate(LocalDate.parse(record.get("date"), formatter));
-            entry.setAmount(Money.of(CurrencyUnit.of(record.get("currency").toUpperCase()), Double.parseDouble(record.get("value"))));
-            entry.setChapterKey(chapterStringsMap.get(record.get("chapters")));
+            entry.setAmount(Money.of(
+                    CurrencyUnit.of(record.get("currency").toUpperCase()),
+                    (invertSign?-1:1)*Double.parseDouble(record.get("value"))));
+            if (!record.get("chapters").isEmpty()) {
+              entry.setChapterKey(chapterStringsMap.get(record.get("chapters")));
+            }
             entry.setPayee(record.get("payee"));
-            int scale = Math.max(DEFAULT_SHARE_SCALE, entry.getAmount().getScale());
             for (String tag : record.get("tags").split(CSV_TAGS_SEPARATOR)) {
               if (!tag.trim().isEmpty()) {
                 entry.getTags().add(tag);
@@ -362,6 +389,7 @@ public class EntryResource {
             }
             entry.setDescription(record.get("description"));
             entry.setNote(record.get("notes"));
+            int scale = Math.max(DEFAULT_SHARE_SCALE, entry.getAmount().getScale());
             //by shares
             for (String userId : userIds) {
               String share = record.get("by:" + userId);
@@ -371,7 +399,7 @@ public class EntryResource {
                 value = Double.parseDouble(share.replace("%", ""));
                 value = entry.getAmount().getAmount().doubleValue() * value / 100d;
               } else {
-                value = Double.parseDouble(share);
+                value = (invertSign?-1:1)*Double.parseDouble(share);
               }
               entry.getByShares().put(Key.create(RegisteredUser.class, userId), BigDecimal.valueOf(value).setScale(scale, RoundingMode.DOWN));
             }
@@ -386,7 +414,7 @@ public class EntryResource {
                 value = Double.parseDouble(share.replace("%", ""));
                 value = entry.getAmount().getAmount().doubleValue() * value / 100d;
               } else {
-                value = Double.parseDouble(share);
+                value = (invertSign?-1:1)*Double.parseDouble(share);
               }
               entry.getForShares().put(Key.create(RegisteredUser.class, userId), BigDecimal.valueOf(value).setScale(scale, RoundingMode.DOWN));
             }
@@ -398,7 +426,8 @@ public class EntryResource {
                     Key.create(group),
                     Key.create(entry),
                     new Date(),
-                    Key.create(RegisteredUser.class, securityContext.getUserPrincipal().getName()));
+                    Key.create(RegisteredUser.class, securityContext.getUserPrincipal().getName()),
+                    EntryOperation.Type.IMPORT);
             OfyService.ofy().save().entity(operation).now();
             LOG.info(String.format("%s created.", entry));
           }
