@@ -6,32 +6,44 @@
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="description" content="">
-    <meta name="viewport" content="initial-scale=1, maximum-scale=1, user-scalable=no" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
 
     <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Istok+Web:400,700">
-    <link rel="stylesheet" href="https://ajax.googleapis.com/ajax/libs/angular_material/1.0.0-rc1/angular-material.min.css">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.min.css">
     <link rel="stylesheet" href="assets/app.css">
 
   </head>
 
-  <body ng-app="fammulfinApp" ng-controller="MainController as m">
+  <body data-ng-app="fammulfinApp" data-ng-controller="MainController as m">
 
-    <section>
-      <header>
-        User: {{m.user.name}}
-      </header>
-    </section>
+    <nav class="navbar navbar-default" role="navigation" data-bs-navbar>
+      <div class="container">
+        <div class="navbar-header">
+          <a class="navbar-brand" href="#">FamMulFin</a>
+        </div>
+        <ul class="nav navbar-nav">
+          <li data-match-route="/dashboard"><a href="#/">Dashboard</a></li>
+          <li data-match-route="/*/group"><a href="#/{{m.groups[0].id}}/group">Group</a></li>
+          <li data-match-route="/*/entries/*"><a href="#/{{m.groups[0].id}}/entries">Entries</a></li>
+        </ul>
+      </div>
+    </nav>
 
-    <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.4.2/angular.min.js"></script>
-    <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.4.2/angular-animate.min.js"></script>
-    <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.4.2/angular-aria.min.js"></script>
-    <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.4.2/angular-route.min.js"></script>
-    <script src="https://ajax.googleapis.com/ajax/libs/angular_material/1.0.0-rc1/angular-material.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/restangular/1.5.1/restangular.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/lodash.js/3.10.1/lodash.min.js"></script>
+    <div class="container" role="main">
+      <div data-ng-view></div>
+    </div>
+
+    <script src="//ajax.googleapis.com/ajax/libs/angularjs/1.4.2/angular.min.js"></script>
+    <script src="//ajax.googleapis.com/ajax/libs/angularjs/1.4.2/angular-route.min.js"></script>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/restangular/1.5.1/restangular.min.js"></script>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/lodash.js/3.10.1/lodash.min.js"></script>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/angular-strap/2.3.5/angular-strap.min.js"></script>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/angular-strap/2.3.5/angular-strap.tpl.min.js"></script>
 
     <script src="./src/app.js"></script>
     <script src="./src/controllers/MainController.js"></script>
+    <script src="./src/controllers/DashboardController.js"></script>
+    <script src="./src/controllers/GroupController.js"></script>
     <script src="./src/controllers/EntriesController.js"></script>
 
   </body>

@@ -3,7 +3,7 @@
 (function () {
   'use strict';
   
-  angular.module('fammulfinApp').controller('EntriesController', function EntriesController ($log, Restangular, CURRENCIES, CHAPTER_SEPARATOR, DATE_FORMATS) {
+  angular.module('fammulfinApp').controller('EntriesController', function (Restangular) {
     var self = this;
   });
 

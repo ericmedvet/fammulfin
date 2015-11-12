@@ -10,11 +10,11 @@
     self.chapterSeparator = CHAPTER_SEPARATOR;
     self.dateFormats = DATE_FORMATS;
 
-    Restangular.all("groups").getList().then(function (groups) {
+    Restangular.all('groups').getList().then(function (groups) {
       self.groups = groups;
     });
-
-    Restangular.one("users", "me").get().then(function (user) {
+    
+    Restangular.one('users', 'me').get().then(function (user) {
       self.user = user;
     });
   });

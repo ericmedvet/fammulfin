@@ -1,20 +1,20 @@
 /* global angular */
 
 (function () {
-  angular.module('fammulfinApp', ['ngRoute', 'restangular']);
+  angular.module('fammulfinApp', ['ngRoute', 'restangular', 'mgcrea.ngStrap']);
 
   angular.module('fammulfinApp').config(function (RestangularProvider) {
     RestangularProvider.setBaseUrl('/api');
-    RestangularProvider.setRestangularFields({id: "id"});
   });
 
-  /*angular.module('fammulfinApp').config(function ($routeProvider) {
+  angular.module('fammulfinApp').config(function ($routeProvider) {
     $routeProvider.
-            //when('/dashboard', {templateUrl: 'partials/dashboard.html', controller: DashboardController}).
-            when('/:groupId', {redirectTo: '/:groupId/' + (new Date()).getFullYear() + '/' + (1 + 1 * (new Date()).getMonth())}).
-            when('/:groupId/:year/:month', {templateUrl: 'partials/entries.html', controller: EntriesController}).
+            when('/dashboard', {templateUrl: 'partials/dashboard.html', controller: 'DashboardController as d'}).
+            when('/:groupId/group/', {templateUrl: 'partials/group.html', controller: 'GroupController'}).
+            when('/:groupId/entries/', {redirectTo: '/:groupId/entries/' + (new Date()).getFullYear() + '/' + (1 + 1 * (new Date()).getMonth())}).
+            when('/:groupId/entries/:year/:month', {templateUrl: 'partials/entries.html', controller: 'EntriesController'}).
             otherwise({redirectTo: '/dashboard'});
-  });*/
+  });
 
   angular.module('fammulfinApp').constant('CURRENCIES', {
     'eur': {symbol: '€', name: "Euro"},
