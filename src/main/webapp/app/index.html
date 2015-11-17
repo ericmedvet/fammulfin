@@ -14,7 +14,7 @@
 
   </head>
 
-  <body data-ng-app="fammulfinApp" data-ng-controller="MainController as m">
+  <body data-ng-app="fammulfinApp" data-ng-controller="MainController as mc">
 
     <nav class="navbar navbar-default" role="navigation" data-bs-navbar>
       <div class="container">
@@ -23,8 +23,16 @@
         </div>
         <ul class="nav navbar-nav">
           <li data-match-route="/dashboard"><a href="#/">Dashboard</a></li>
-          <li data-match-route="/*/group"><a href="#/{{m.groups[0].id}}/group">Group</a></li>
-          <li data-match-route="/*/entries/*"><a href="#/{{m.groups[0].id}}/entries">Entries</a></li>
+          <li data-match-route="/*/group"><a href="#/{{mc.groups[0].id}}/group">Group</a></li>
+          <li data-match-route="/*/entries/*"><a href="#/{{mc.groups[0].id}}/entries">Entries</a></li>
+        </ul>
+        <ul class="nav navbar-nav navbar-right">
+          <li class="dropdown">
+            <a href="#" data-bs-dropdown>Groups <span class="caret"></span></a>
+            <ul class="dropdown-menu" role="menu">
+              <li><a href="#/{{group.id}}/group" data-ng-repeat="group in mc.groups">{{group.name}}</a></li>
+            </ul>
+          </li>
         </ul>
       </div>
     </nav>
