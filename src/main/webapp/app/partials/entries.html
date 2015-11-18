@@ -1,4 +1,6 @@
-<h1>Entries</h1>
+<div class="page-header">
+  <h1>{{mc.group.name}} <small>{{ec.month}}/{{ec.year}}</small></h1>
+</div>
 
 {{ec.entries.length}} entries found
 
@@ -25,21 +27,25 @@
       <td class="controls">
       </td>
       <td class="date">
-        {{entry.date|date:dateFormats.short}}
+        {{entry.date|date:mc.dateFormats.short}}
       </td>
       <td class="amount-currency">
-        {{currencies[entry.currency].symbol}}
-        <span class="amount">{{entry.amount.value}}</span>
+        {{mc.currencies[entry.amount.currency].symbol}}
+        <span data-fa-amount data-amount="entry.amount"></span>
       </td>
       <td>
         <div>{{entry.payee}}</div>
       </td>
       <td>
-        by, for
+        {{entry.amount.value|currency:entry.amount.currency:2}}
       </td>
       <td>
         <div class="description">
           {{entry.description}}
+        </div>
+        <div>
+          <span data-ng-repeat="tag in entry.tags|orderBy:'+'" class="label">{{tag}}</span>
+          <span class="notes">{{entry.notes}}</span>
         </div>
       </td>
     </tr>

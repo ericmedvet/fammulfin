@@ -1,4 +1,92 @@
-html, body {
+body {
   font-family: 'Istok Web', sans-serif;
-  font-size: 7mm;
+  font-size: 0.4cm;
+}
+
+a i[class^='icon'] {
+  cursor: pointer;
+}
+
+.loading-indicator {
+  float: right;
+  font-size: 8mm;
+}
+
+.last-modified {
+  color: gray;
+}
+
+.modal-footer .loading-indicator {
+  float: left;
+}
+
+form.dense .control-group {
+  margin-bottom: 2mm;
+}
+
+.entry-users .item:not(:last-of-type)::after {
+  content: ', ';
+  color: gray;
+}
+
+.chapters .item:not(:last-of-type)::after {
+  content: ' > ';
+  color: gray;
+  font-size: 75%;
+}
+
+.separator,
+.entry-user-value,
+.inline-label {
+  color: gray;
+  font-size: 75%;
+}
+
+.entries-table {
+  table-layout: fixed;
+  border-collapse: collapse;  
+}
+
+.entries-table .label {
+  margin-left: 1mm;
+}
+
+.entries-table td,
+.entries-table th {
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+.entries-table tr .controls a {
+  visibility: hidden;
+}
+
+.entries-table tr:hover .controls a {
+  visibility: visible;
+}
+
+td.amount-currency,
+td.date,
+td.controls {
+  text-align: right;
+  vertical-align: middle;
+}
+
+.amount {
+  font-weight: bold;
+}
+
+.amount .more-significative {
+  font-size: 200%;
+}
+
+.amount .less-significative {
+  font-size: 125%;
+}
+
+/* http://stackoverflow.com/questions/3975769/disable-webkits-spin-buttons-on-input-type-number */
+input[type=number]::-webkit-inner-spin-button,
+input[type=number]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
 }

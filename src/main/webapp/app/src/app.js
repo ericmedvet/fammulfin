@@ -1,7 +1,9 @@
 /* global angular */
 
 (function () {
-  angular.module('fammulfinApp', ['ngRoute', 'restangular', 'mgcrea.ngStrap']);
+  'use strict';
+
+  angular.module('fammulfinApp', ['ngRoute', 'restangular', 'mgcrea.ngStrap', 'ui.gravatar']);
 
   angular.module('fammulfinApp').config(function (RestangularProvider) {
     RestangularProvider.setBaseUrl('/api');
@@ -29,6 +31,47 @@
     log: 'yyyy-MM-dd HH:mm',
     short: 'dd/MM/yy'
   });
-  
+
+  angular.module('fammulfinApp').directive('faAmount', function () {
+    return {
+      restrict: 'A',
+      scope: {
+        amount: '=amount'
+      },
+      templateUrl: 'partials/amount-template.html'
+    };
+  });
+
+  angular.module('fammulfinApp').filter('numberIntPart', function () {
+    return function (val) {
+      if (angular.isNumber(val)) {
+        return Math.floor(Math.abs(val));
+      }
+      return val;
+    };
+  });
+
+  angular.module('fammulfinApp').filter('numberDecimalPart', function () {
+    return function (val) {
+      if (angular.isNumber(val)) {
+        var dec = Math.round(100*(Math.abs(val)-Math.floor(Math.abs(val))));
+        if (dec==0) {
+          return '00';
+        }
+        return dec;
+      }
+      return val;
+    };
+  });
+
+  angular.module('fammulfinApp').filter('numberSign', function () {
+    return function (val) {
+      if (angular.isNumber(val)) {
+        return (val<0)?'-':'';
+      }
+      return val;
+    };
+  });
+
 })();
 
