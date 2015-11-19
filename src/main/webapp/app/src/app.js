@@ -3,7 +3,7 @@
 (function () {
   'use strict';
 
-  angular.module('fammulfinApp', ['ngRoute', 'restangular', 'mgcrea.ngStrap', 'ui.gravatar']);
+  angular.module('fammulfinApp', ['ngRoute', 'restangular', 'mgcrea.ngStrap', 'ui.gravatar', 'angular-loading-bar']);
 
   angular.module('fammulfinApp').config(function (RestangularProvider) {
     RestangularProvider.setBaseUrl('/api');
@@ -19,10 +19,10 @@
   });
 
   angular.module('fammulfinApp').constant('CURRENCIES', {
-    'eur': {symbol: '€', name: "Euro"},
-    'usd': {symbol: '$', name: "US dollar"},
-    'jpy': {symbol: '¥', name: "Yen"},
-    'gbp': {symbol: '£', name: "GB pound"}
+    'EUR': {symbol: '€', name: "Euro"},
+    'USD': {symbol: '$', name: "US dollar"},
+    'JPY': {symbol: '¥', name: "Yen"},
+    'GBP': {symbol: '£', name: "GB pound"}
   });
 
   angular.module('fammulfinApp').constant('CHAPTER_SEPARATOR', ">");
@@ -57,6 +57,9 @@
         var dec = Math.round(100*(Math.abs(val)-Math.floor(Math.abs(val))));
         if (dec==0) {
           return '00';
+        }
+        if (dec<10) {
+          return '0'+dec;
         }
         return dec;
       }

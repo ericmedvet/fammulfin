@@ -7,17 +7,8 @@ a i[class^='icon'] {
   cursor: pointer;
 }
 
-.loading-indicator {
-  float: right;
-  font-size: 8mm;
-}
-
 .last-modified {
   color: gray;
-}
-
-.modal-footer .loading-indicator {
-  float: left;
 }
 
 form.dense .control-group {
