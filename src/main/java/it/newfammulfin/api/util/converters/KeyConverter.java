@@ -24,15 +24,22 @@ public class KeyConverter implements JsonSerializer<Key<?>>, JsonDeserializer<Ke
 
   @Override
   public JsonElement serialize(Key<?> key, Type type, JsonSerializationContext jsc) {
-    return new JsonPrimitive(key.toWebSafeString());
+    JsonObject jsonObject = new JsonObject();
+    jsonObject.addProperty("raw", key.toWebSafeString());
+    jsonObject.addProperty("id", key.getId());
+    return jsonObject;
   }
 
   @Override
   public Key<?> deserialize(JsonElement jsonElement, Type type, JsonDeserializationContext jdc) throws JsonParseException {
-    if (!(jsonElement instanceof JsonPrimitive)) {
+    if (!(jsonElement instanceof JsonObject)) {
       throw new JsonParseException("Json object expected");
     }
-    return Key.create(((JsonPrimitive)jsonElement).getAsString());
+    if (((JsonObject)jsonElement).get("raw")==null) {
+      throw new JsonParseException("Json object expected");
+    }
+    String rawString = ((JsonObject)jsonElement).get("raw").getAsString();
+    return Key.create(rawString);
   }
 
 }

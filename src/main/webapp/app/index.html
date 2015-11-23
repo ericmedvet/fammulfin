@@ -24,23 +24,19 @@
           <a class="navbar-brand" href="#">FamMulFin</a>
         </div>
         <ul class="nav navbar-nav">
-          <li data-match-route="/dashboard"><a href="#/">Dashboard</a></li>
-          <li data-match-route="/*/group"><a href="#/{{mc.groups[0].id}}/group">Group</a></li>
-          <li data-match-route="/*/entries/*"><a href="#/{{mc.groups[0].id}}/entries">Entries</a></li>
-        </ul>
-        <ul class="nav navbar-nav navbar-right">
           <li class="dropdown">
             <a data-bs-dropdown>Groups <span class="caret"></span></a>
             <ul class="dropdown-menu" role="menu">
               <li><a href="#/{{group.id}}/group" data-ng-repeat="group in mc.groups">{{group.name}}</a></li>
             </ul>
           </li>
-          <li>
-            <a class="navbar-brand" href="#/user">
-              <img data-gravatar-src="mc.user.name" data-gravatar-size="25">
-            </a>
-          </li>
         </ul>
+        <div class="nav navbar-right">
+          <div class="navbar-text">
+            <img class="profile-image img-circle" data-gravatar-src="mc.user.name" data-gravatar-size="30">
+            <a href="#/user">{{mc.user.name}}</a>
+          </div>
+        </div>
       </div>
     </nav>
 
@@ -57,7 +53,7 @@
 
     <script src="./lib/angular-gravatar.min.js"></script>
     <script src="./lib/loading-bar.min.js"></script>
-    
+
     <script src="./src/app.js"></script>
     <script src="./src/controllers/MainController.js"></script>
     <script src="./src/controllers/DashboardController.js"></script>

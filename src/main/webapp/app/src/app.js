@@ -12,9 +12,10 @@
   angular.module('fammulfinApp').config(function ($routeProvider) {
     $routeProvider.
             when('/dashboard', {templateUrl: 'partials/dashboard.html', controller: 'DashboardController as dc'}).
-            when('/:groupId/group/', {templateUrl: 'partials/group.html', controller: 'GroupController'}).
-            when('/:groupId/entries/', {redirectTo: '/:groupId/entries/' + (new Date()).getFullYear() + '/' + (1 + 1 * (new Date()).getMonth())}).
-            when('/:groupId/entries/:year/:month', {templateUrl: 'partials/entries.html', controller: 'EntriesController as ec'}).
+            when('/:groupId/group', {templateUrl: 'partials/group.html', controller: 'GroupController'}).
+            when('/:groupId/entries', {redirectTo: '/:groupId/entries/date/' + (new Date()).getFullYear() + '/' + (1 + 1 * (new Date()).getMonth())}).
+            when('/:groupId/entries/date/:year/:month?', {templateUrl: 'partials/entries.html', controller: 'EntriesController as ec'}).
+            when('/:groupId/entries/chapter/:chapterId/:year?/:month?', {templateUrl: 'partials/entries.html', controller: 'EntriesController as ec'}).
             otherwise({redirectTo: '/dashboard'});
   });
 
