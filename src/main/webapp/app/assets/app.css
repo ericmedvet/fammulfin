@@ -38,10 +38,6 @@ form.dense .control-group {
   border-collapse: collapse;  
 }
 
-.entries-table .label {
-  margin-left: 1mm;
-}
-
 .entries-table td,
 .entries-table th {
   white-space: nowrap;

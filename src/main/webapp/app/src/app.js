@@ -55,12 +55,12 @@
   angular.module('fammulfinApp').filter('numberDecimalPart', function () {
     return function (val) {
       if (angular.isNumber(val)) {
-        var dec = Math.round(100*(Math.abs(val)-Math.floor(Math.abs(val))));
-        if (dec==0) {
+        var dec = Math.round(100 * (Math.abs(val) - Math.floor(Math.abs(val))));
+        if (dec == 0) {
           return '00';
         }
-        if (dec<10) {
-          return '0'+dec;
+        if (dec < 10) {
+          return '0' + dec;
         }
         return dec;
       }
@@ -71,9 +71,34 @@
   angular.module('fammulfinApp').filter('numberSign', function () {
     return function (val) {
       if (angular.isNumber(val)) {
-        return (val<0)?'-':'';
+        return (val < 0) ? '-' : '';
       }
       return val;
+    };
+  });
+
+  //http://stackoverflow.com/a/12506795
+  angular.module('fammulfinApp').factory('Title', function () {
+    var defaultTitle = 'Fammulfin';
+    var context = '';
+    var subContext = '';
+    return {
+      getTitle: function () {
+        if (context=='') {
+          return defaultTitle;
+        }
+        var title = context;
+        if (subContext) {
+          title = title+' : '+subContext;
+        }
+        return title;
+      },
+      setContext: function (newContext) {
+        context = newContext;
+      },
+      setSubContext: function (newSubContext) {
+        subContext = newSubContext;
+      }
     };
   });
 

@@ -7,7 +7,9 @@ package it.newfammulfin.api;
 
 import com.googlecode.objectify.Key;
 import it.newfammulfin.api.util.OfyService;
+import it.newfammulfin.model.Group;
 import it.newfammulfin.model.RegisteredUser;
+import java.util.List;
 import java.util.logging.Logger;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
@@ -83,5 +85,5 @@ public class RegisteredUserResource {
     Key<RegisteredUser> userKey = Key.create(RegisteredUser.class, id);
     return Response.ok(userKey).build();
   }
-
+ 
 }

@@ -3,7 +3,7 @@
 (function () {
   'use strict';
 
-  angular.module('fammulfinApp').controller('EntriesController', function (Restangular, $routeParams, $scope) {
+  angular.module('fammulfinApp').controller('EntriesController', function (Restangular, Title, $routeParams, $scope) {
     var self = this;
 
     //from here should be put in service like this: http://stackoverflow.com/a/31967940/1003056
@@ -15,10 +15,13 @@
       self.group = _.find($scope.mc.groups, function (group) {
         return group.id == $routeParams.groupId;
       });
-      Restangular.one("groups", $routeParams.groupId).getList("chapters").then(function (chapters) {
-        self.chapters = chapters;
-        $scope.$broadcast("ChaptersLoaded");
-      });
+      if (self.group!==undefined) {
+        Title.setContext(self.group.name);
+        Restangular.one("groups", $routeParams.groupId).getList("chapters").then(function (chapters) {
+          self.chapters = chapters;
+          updateChaptersMap();
+        });
+      }
     }
     
     var updateChaptersMap = function() {
@@ -26,19 +29,34 @@
       _.each(self.chapters, function(chapter) {
         self.chaptersMap[chapter.id] = chapter;
       });
+      var getChaptersIds = function(id) {
+        if (self.chaptersMap[id].parentChapterKey===undefined) {
+          return [id];
+        }
+        var ids = getChaptersIds(self.chaptersMap[id].parentChapterKey.id);
+        ids.push(id);
+        return ids;
+      }
+      _.each(self.chapters, function(chapter) {
+        chapter.ids = getChaptersIds(chapter.id);
+      });
+      if (self.chapterId) {
+        Title.setSubContext(self.chaptersMap[self.chapterId].name);
+      }
     };
     
     updateGroup();
 
     $scope.$on("GroupsLoaded", updateGroup);
-    $scope.$on("ChaptersLoaded", updateChaptersMap);
 
     var queryParams = {};
     if (self.year!==undefined) {
       queryParams.year = self.year;
+      Title.setSubContext(self.year);
     }
     if (self.month!==undefined) {
       queryParams.month = self.month;
+      Title.setSubContext(self.month+"/"+self.year);
     }
     if (self.chapterId!==undefined) {
       queryParams.chapterId = self.chapterId;
@@ -46,6 +64,10 @@
     Restangular.one("groups", $routeParams.groupId).getList("entries", queryParams).then(function (entries) {
       self.entries = entries;
     });
+    
+    self.nonZeroEntryUsers = function(entryUser) {
+    return entryUser[1]!==0;
+  };
 
   });
 

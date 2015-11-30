@@ -26,6 +26,7 @@ import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -79,7 +80,7 @@ public class EntryResource {
           @PathParam("groupId") @NotNull Long groupId,
           @QueryParam("year") Integer year,
           @QueryParam("month") Integer month,
-          @QueryParam("chapterKey") String chapterKeyString,
+          @QueryParam("chapterId") Long chapterId,
           @QueryParam("payee") String payee) {
     Group group = (Group) requestContext.getProperty(GroupRetrieverRequestFilter.GROUP);
     Query<Entry> query = OfyService.ofy().load().type(Entry.class).ancestor(group);
@@ -93,14 +94,27 @@ public class EntryResource {
         query = query.filter("date >=", new LocalDate(year, 12, 1)).filter("date <", new LocalDate(year+1, 1, 1));
       }
     }
-    if (chapterKeyString!=null&&!chapterKeyString.isEmpty()) {
-      query = query.filter("chapterKey", Key.create(chapterKeyString));
+    if (chapterId!=null) {
+      Set<Key<Chapter>> chapterKeys = new LinkedHashSet<>();
+      Key<Chapter> chapterKey = Key.create(Key.create(group), Chapter.class, chapterId);
+      chapterKeys.addAll(getChildChapterKeys(chapterKey, group));
+      query = query.filter("chapterKey in", chapterKeys);
     }
     if (payee!=null&&!payee.isEmpty()) {
       query = query.filter("payee", payee);
     }
     List<Entry> entries = query.list();
     return Response.ok(entries).build();
+  }
+  
+  private Set<Key<Chapter>> getChildChapterKeys(Key<Chapter> parentChapterKey, Group group) {
+    Set<Key<Chapter>> chapterKeys = new LinkedHashSet<>();
+    chapterKeys.add(parentChapterKey);
+    List<Chapter> chapters = OfyService.ofy().load().type(Chapter.class).ancestor(group).filter("parentChapterKey", parentChapterKey).list();
+    for (Chapter chapter : chapters) {
+      chapterKeys.addAll(getChildChapterKeys(Key.create(chapter), group));
+    }
+    return chapterKeys;
   }
 
   @GET

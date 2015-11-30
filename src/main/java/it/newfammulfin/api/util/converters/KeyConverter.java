@@ -26,7 +26,11 @@ public class KeyConverter implements JsonSerializer<Key<?>>, JsonDeserializer<Ke
   public JsonElement serialize(Key<?> key, Type type, JsonSerializationContext jsc) {
     JsonObject jsonObject = new JsonObject();
     jsonObject.addProperty("raw", key.toWebSafeString());
-    jsonObject.addProperty("id", key.getId());
+    if (key.getName()==null) {
+      jsonObject.addProperty("id", key.getId());
+    } else {
+      jsonObject.addProperty("id", key.getName());
+    }
     return jsonObject;
   }
 

@@ -1,7 +1,7 @@
 <!DOCTYPE html>
-<html lang="en" >
+<html lang="en" data-ng-app="fammulfinApp" data-ng-controller="MainController as mc">
   <head>
-    <title>Fammulfin</title>
+    <title>{{mc.title.getTitle()}}</title>
 
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
@@ -16,7 +16,7 @@
 
   </head>
 
-  <body data-ng-app="fammulfinApp" data-ng-controller="MainController as mc">
+  <body>
 
     <nav class="navbar navbar-default" role="navigation" data-bs-navbar>
       <div class="container">
@@ -39,7 +39,7 @@
         </div>
       </div>
     </nav>
-
+    
     <div class="container" role="main">
       <div data-ng-view></div>
     </div>
