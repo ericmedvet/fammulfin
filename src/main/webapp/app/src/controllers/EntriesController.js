@@ -15,7 +15,11 @@
       self.group = _.find($scope.mc.groups, function (group) {
         return group.id == $routeParams.groupId;
       });
-      if (self.group!==undefined) {
+      if (self.group !== undefined) {
+        self.usersMap = {};
+        _.each(self.group.usersMap, function (user) {
+          self.usersMap[user[0].id] = user[1];
+        });
         Title.setContext(self.group.name);
         Restangular.one("groups", $routeParams.groupId).getList("chapters").then(function (chapters) {
           self.chapters = chapters;
@@ -23,51 +27,47 @@
         });
       }
     }
-    
-    var updateChaptersMap = function() {
+
+    var updateChaptersMap = function () {
       self.chaptersMap = {};
-      _.each(self.chapters, function(chapter) {
+      _.each(self.chapters, function (chapter) {
         self.chaptersMap[chapter.id] = chapter;
       });
-      var getChaptersIds = function(id) {
-        if (self.chaptersMap[id].parentChapterKey===undefined) {
+      var getChaptersIds = function (id) {
+        if (self.chaptersMap[id].parentChapterKey === undefined) {
           return [id];
         }
         var ids = getChaptersIds(self.chaptersMap[id].parentChapterKey.id);
         ids.push(id);
         return ids;
       }
-      _.each(self.chapters, function(chapter) {
+      _.each(self.chapters, function (chapter) {
         chapter.ids = getChaptersIds(chapter.id);
       });
       if (self.chapterId) {
         Title.setSubContext(self.chaptersMap[self.chapterId].name);
       }
     };
-    
+
     updateGroup();
 
     $scope.$on("GroupsLoaded", updateGroup);
 
     var queryParams = {};
-    if (self.year!==undefined) {
+    if (self.year !== undefined) {
       queryParams.year = self.year;
       Title.setSubContext(self.year);
     }
-    if (self.month!==undefined) {
+    if (self.month !== undefined) {
       queryParams.month = self.month;
-      Title.setSubContext(self.month+"/"+self.year);
+      Title.setSubContext(self.month + "/" + self.year);
     }
-    if (self.chapterId!==undefined) {
+    if (self.chapterId !== undefined) {
       queryParams.chapterId = self.chapterId;
     }
     Restangular.one("groups", $routeParams.groupId).getList("entries", queryParams).then(function (entries) {
       self.entries = entries;
     });
-    
-    self.nonZeroEntryUsers = function(entryUser) {
-    return entryUser[1]!==0;
-  };
 
   });
 

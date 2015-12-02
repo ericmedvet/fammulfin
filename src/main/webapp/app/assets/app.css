@@ -82,3 +82,19 @@ input[type=number]::-webkit-outer-spin-button {
   margin: -10px 0px;
   height: 30px;
 }
+
+.page-header > div {
+  font-size: 150%;
+}
+
+.page-header > * {
+  display: inline;
+}
+
+.page-header > *:not(:first-child) {
+  margin-left: 5mm;
+}
+
+.page-header > *:not(:last-child) {
+  margin-right: 5mm;
+}

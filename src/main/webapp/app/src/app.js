@@ -13,8 +13,8 @@
     $routeProvider.
             when('/dashboard', {templateUrl: 'partials/dashboard.html', controller: 'DashboardController as dc'}).
             when('/:groupId/group', {templateUrl: 'partials/group.html', controller: 'GroupController'}).
-            when('/:groupId/entries', {redirectTo: '/:groupId/entries/date/' + (new Date()).getFullYear() + '/' + (1 + 1 * (new Date()).getMonth())}).
-            when('/:groupId/entries/date/:year/:month?', {templateUrl: 'partials/entries.html', controller: 'EntriesController as ec'}).
+            when('/:groupId/entries', {redirectTo: '/:groupId/entries/all/' + (new Date()).getFullYear() + '/' + (1 + 1 * (new Date()).getMonth())}).
+            when('/:groupId/entries/all/:year/:month?', {templateUrl: 'partials/entries.html', controller: 'EntriesController as ec'}).
             when('/:groupId/entries/chapter/:chapterId/:year?/:month?', {templateUrl: 'partials/entries.html', controller: 'EntriesController as ec'}).
             otherwise({redirectTo: '/dashboard'});
   });
@@ -40,6 +40,32 @@
         amount: '=amount'
       },
       templateUrl: 'partials/amount-template.html'
+    };
+  });
+
+  angular.module('fammulfinApp').directive('faShares', function () {
+    return {
+      restrict: 'A',
+      scope: {
+        shares: '=shares',
+        percentage: '=percentage',
+        amountValue: '=amountValue',
+        usersMap: '=usersMap'
+      },
+      controller: function($scope) {
+        $scope.areAllEquals = function() {
+          if ($scope.shares.length<=1) {
+            return true;
+          }
+          for (var i = 1; i<$scope.shares.length; i++) {
+            if ($scope.shares[i][1]!=$scope.shares[i-1][1]) {
+              return false;
+            }
+          }
+          return true;
+        }
+      },
+      templateUrl: 'partials/shares-template.html'
     };
   });
 
