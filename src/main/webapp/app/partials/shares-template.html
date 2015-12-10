@@ -1,7 +1,8 @@
-<span data-ng-repeat="share in shares"
+<span data-ng-if="!isJustAll()"><span data-ng-repeat="share in shares"
       data-ng-if="share[1]!=0"
       class="item"><span>{{usersMap[share[0].id]}}</span><span
     data-ng-hide="percentage||areAllEquals()||(share[1]==amountValue)"
     class="entry-user-value"> {{share[1]|number:2}}</span><span
     data-ng-hide="!percentage||areAllEquals()||(share[1]==amountValue)"
-    class="entry-user-value"> {{(100*share[1]/amountValue)|number:0}}%</span></span>
+    class="entry-user-value"> {{(100*share[1]/amountValue)|number:0}}%</span></span></span>
+<span data-ng-if="isJustAll()" class="all">all</span>

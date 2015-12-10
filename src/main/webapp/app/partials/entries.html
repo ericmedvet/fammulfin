@@ -9,11 +9,11 @@
     </span>
   </div>
   <div>
-    <span data-bs-dropdown>{{({true:ec.month,false:'*'})[ec.month!=undefined]}}<span class="caret"></span></span>
+    <span data-bs-dropdown>{{({true:mc.CONST.monthNames[ec.month-1],false:'*'})[ec.month!=undefined]}}<span class="caret"></span></span>
     <ul class="dropdown-menu" role="menu">
-      <li data-ng-repeat="m in [1,2,3,4,5,6,7,8,9,10,11,12]">
-        <a data-ng-show="ec.chapterId" href="#/{{ec.group.id}}/entries/chapter/{{ec.chapterId}}/{{ec.year}}/{{m}}">{{m}}</a>
-        <a data-ng-hide="ec.chapterId" href="#/{{ec.group.id}}/entries/all/{{ec.year}}/{{m}}">{{m}}</a>
+      <li data-ng-repeat="m in [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]">
+        <a data-ng-show="ec.chapterId" href="#/{{ec.group.id}}/entries/chapter/{{ec.chapterId}}/{{ec.year}}/{{m}}">{{mc.CONST.monthNames[m - 1]}}</a>
+        <a data-ng-hide="ec.chapterId" href="#/{{ec.group.id}}/entries/all/{{ec.year}}/{{m}}">{{mc.CONST.monthNames[m - 1]}}</a>
       </li>
       <li role="separator" class="divider"></li>
       <li>
@@ -24,12 +24,22 @@
     /
     <span data-bs-dropdown>{{ec.year}}<span class="caret"></span></span>
     <ul class="dropdown-menu" role="menu">
-      <li data-ng-repeat="y in [ec.year-2, ec.year-1, ec.year, ec.year+1, ec.year+2]">
-        <a data-ng-show="ec.chapterId" href="#/{{ec.group.id}}/entries/chapter/{{ec.chapterId}}/{{y}}/{{ec.month}}">{{ym}}</a>
+      <li data-ng-repeat="y in ec.yearsRange(ec.year)">
+        <a data-ng-show="ec.chapterId" href="#/{{ec.group.id}}/entries/chapter/{{ec.chapterId}}/{{y}}/{{ec.month}}">{{y}}</a>
         <a data-ng-hide="ec.chapterId" href="#/{{ec.group.id}}/entries/all/{{y}}/{{ec.month}}">{{y}}</a>
       </li>
     </ul>
   </div>
+  <form class="form-inline pull-right" role="search">
+    <div class="input-group">
+      <input type="text" class="form-control" placeholder="Filter" data-ng-model="ec.filterText">
+      <span class="input-group-btn">
+        <button class="btn btn-default" type="button" data-ng-click="ec.filterText=''" data-ng-disabled="ec.filterText==''">
+          <span class="glyphicon glyphicon-erase"></span>
+        </button>
+      </span>
+    </div>
+  </form>
 </header>
 
 <table class="table table-striped table-hover table-condensed entries-table">
@@ -43,19 +53,37 @@
   <thead>
     <tr>
       <th></th>
-      <th>Date</th>
-      <th>Amount</th>
-      <th>Chapter and payee</th>
+      <th>Date
+        <a data-ng-click="ec.order.field = 'date';
+              ec.order[ec.order.field] = !ec.order[ec.order.field]" style="color: {{({true:'black',false:'lightgray'})[ec.order.field=='date']}}">
+          <span data-ng-hide="ec.order['date']" class="glyphicon glyphicon-chevron-down"></span>
+          <span data-ng-show="ec.order['date']" class="glyphicon glyphicon-chevron-up"></span>
+        </a>
+      </th>
+      <th>Amount
+        <a data-ng-click="ec.order.field = 'amount.value';
+              ec.order[ec.order.field] = !ec.order[ec.order.field]" style="color: {{({true:'black',false:'lightgray'})[ec.order.field=='amount.value']}}">
+          <span data-ng-hide="ec.order['amount.value']" class="glyphicon glyphicon-chevron-down"></span>
+          <span data-ng-show="ec.order['amount.value']" class="glyphicon glyphicon-chevron-up"></span>
+        </a>
+      </th>
+      <th>Chapter and payee
+        <a data-ng-click="ec.order.field = 'payee';
+              ec.order[ec.order.field] = !ec.order[ec.order.field]" style="color: {{({true:'black',false:'lightgray'})[ec.order.field=='payee']}}">
+          <span data-ng-hide="ec.order['payee']" class="glyphicon glyphicon-chevron-down"></span>
+          <span data-ng-show="ec.order['payee']" class="glyphicon glyphicon-chevron-up"></span>
+        </a>
+      </th>
       <th>People</th>
       <th>Details</th>
     </tr>
   </thead>
   <tbody>
-    <tr data-ng-repeat="entry in ec.entries|orderBy:'date':true">
+    <tr data-ng-repeat="entry in ec.entries|filter:ec.filterText|orderBy:ec.order.field:ec.order[ec.order.field]">
       <td class="controls">
       </td>
       <td class="date">
-        {{entry.date|date:mc.dateFormats.short}}
+        {{entry.date|date:mc.CONST.dateFormats.short}}
       </td>
       <td class="amount-currency">
         <span data-fa-amount data-amount="entry.amount"></span>

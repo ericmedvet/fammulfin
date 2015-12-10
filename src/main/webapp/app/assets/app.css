@@ -3,11 +3,11 @@ body {
   font-size: 0.4cm;
 }
 
-a i[class^='icon'] {
+a [class^='glyphicon'] {
   cursor: pointer;
 }
 
-.last-modified {
+.last-modified, .all {
   color: gray;
 }
 
@@ -31,6 +31,11 @@ form.dense .control-group {
 .inline-label {
   color: gray;
   font-size: 75%;
+}
+
+.inline-label {
+  display: inline-block;
+  min-width: 3ex;
 }
 
 .entries-table {

@@ -10,6 +10,17 @@
     self.year = $routeParams.year;
     self.month = $routeParams.month;
     self.chapterId = $routeParams.chapterId;
+    self.order = {
+      field: 'date',
+      'date': true,
+      'amount.value': true,
+      'payee': true
+    };
+    self.filterText = '';
+    
+    self.yearsRange = function(year) {
+      return [year-2, year-1, year, year*1+1, year*1+2];
+    } 
 
     var updateGroup = function () {
       self.group = _.find($scope.mc.groups, function (group) {

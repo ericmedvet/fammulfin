@@ -1,4 +1,4 @@
-/* global angular */
+/* global angular, _ */
 
 (function () {
   'use strict';
@@ -19,18 +19,20 @@
             otherwise({redirectTo: '/dashboard'});
   });
 
-  angular.module('fammulfinApp').constant('CURRENCIES', {
-    'EUR': {symbol: '€', name: "Euro"},
-    'USD': {symbol: '$', name: "US dollar"},
-    'JPY': {symbol: '¥', name: "Yen"},
-    'GBP': {symbol: '£', name: "GB pound"}
-  });
-
-  angular.module('fammulfinApp').constant('CHAPTER_SEPARATOR', ">");
-
-  angular.module('fammulfinApp').constant('DATE_FORMATS', {
-    log: 'yyyy-MM-dd HH:mm',
-    short: 'dd/MM/yy'
+  angular.module('fammulfinApp').constant('CONST', {
+    currencies: {
+      'EUR': {symbol: '€', name: "Euro"},
+      'USD': {symbol: '$', name: "US dollar"},
+      'JPY': {symbol: '¥', name: "Yen"},
+      'GBP': {symbol: '£', name: "GB pound"}
+    },
+    chapterSeparator: '>',
+    dateFormats: {
+      log: 'yyyy-MM-dd HH:mm',
+      short: 'dd/MM/yy'
+    },
+    monthNames: ['January', 'February', 'March', 'April', 'May', 'June',
+      'July', 'August', 'September', 'October', 'November', 'December']
   });
 
   angular.module('fammulfinApp').directive('faAmount', function () {
@@ -52,13 +54,16 @@
         amountValue: '=amountValue',
         usersMap: '=usersMap'
       },
-      controller: function($scope) {
-        $scope.areAllEquals = function() {
-          if ($scope.shares.length<=1) {
+      controller: function ($scope) {
+        $scope.isJustAll = function () {
+          return ($scope.shares.length===_.keys($scope.usersMap).length)&&$scope.areAllEquals();
+        };
+        $scope.areAllEquals = function () {
+          if ($scope.shares.length <= 1) {
             return true;
           }
-          for (var i = 1; i<$scope.shares.length; i++) {
-            if ($scope.shares[i][1]!=$scope.shares[i-1][1]) {
+          for (var i = 1; i < $scope.shares.length; i++) {
+            if ($scope.shares[i][1] != $scope.shares[i - 1][1]) {
               return false;
             }
           }
@@ -110,12 +115,12 @@
     var subContext = '';
     return {
       getTitle: function () {
-        if (context=='') {
+        if (context == '') {
           return defaultTitle;
         }
         var title = context;
         if (subContext) {
-          title = title+' : '+subContext;
+          title = title + ' : ' + subContext;
         }
         return title;
       },
