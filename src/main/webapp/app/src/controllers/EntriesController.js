@@ -6,10 +6,6 @@
   angular.module('fammulfinApp').controller('EntriesController', function (Restangular, Title, $routeParams, $scope) {
     var self = this;
 
-    //from here should be put in service like this: http://stackoverflow.com/a/31967940/1003056
-    self.year = $routeParams.year;
-    self.month = $routeParams.month;
-    self.chapterId = $routeParams.chapterId;
     self.order = {
       field: 'date',
       'date': true,
@@ -17,6 +13,12 @@
       'payee': true
     };
     self.filterText = '';
+    
+    //from here should be put in service like this: http://stackoverflow.com/a/31967940/1003056
+    // it does not work, since the chapters map is updated only on the service
+    self.year = $routeParams.year;
+    self.month = $routeParams.month;
+    self.chapterId = $routeParams.chapterId;
     
     self.yearsRange = function(year) {
       return [year-2, year-1, year, year*1+1, year*1+2];
@@ -59,11 +61,11 @@
         Title.setSubContext(self.chaptersMap[self.chapterId].name);
       }
     };
-
+    
     updateGroup();
 
     $scope.$on("GroupsLoaded", updateGroup);
-
+   
     var queryParams = {};
     if (self.year !== undefined) {
       queryParams.year = self.year;

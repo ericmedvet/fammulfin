@@ -56,7 +56,7 @@
       },
       controller: function ($scope) {
         $scope.isJustAll = function () {
-          return ($scope.shares.length===_.keys($scope.usersMap).length)&&$scope.areAllEquals();
+          return ($scope.shares.length === _.keys($scope.usersMap).length) && $scope.areAllEquals();
         };
         $scope.areAllEquals = function () {
           if ($scope.shares.length <= 1) {
@@ -132,6 +132,6 @@
       }
     };
   });
-
+  
 })();
 

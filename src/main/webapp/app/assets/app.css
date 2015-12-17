@@ -46,7 +46,13 @@ form.dense .control-group {
 .entries-table td,
 .entries-table th {
   white-space: nowrap;
-  overflow: hidden;
+  overflow: hidden;  
+}
+
+.table-condensed.entries-table>tbody>tr>td {
+  padding-top: 0;
+  padding-bottom: 0;
+  vertical-align: middle;
 }
 
 .entries-table tr .controls a {
