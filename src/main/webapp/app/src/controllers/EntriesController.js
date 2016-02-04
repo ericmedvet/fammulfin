@@ -3,7 +3,7 @@
 (function () {
   'use strict';
 
-  angular.module('fammulfinApp').controller('EntriesController', function (Restangular, Title, $routeParams, $scope) {
+  angular.module('fammulfinApp').controller('EntriesController', function (Restangular, Title, $routeParams, $scope, $modal) {
     var self = this;
 
     self.order = {
@@ -13,16 +13,16 @@
       'payee': true
     };
     self.filterText = '';
-    
+
     //from here should be put in service like this: http://stackoverflow.com/a/31967940/1003056
     // it does not work, since the chapters map is updated only on the service
     self.year = $routeParams.year;
     self.month = $routeParams.month;
     self.chapterId = $routeParams.chapterId;
-    
-    self.yearsRange = function(year) {
-      return [year-2, year-1, year, year*1+1, year*1+2];
-    } 
+
+    self.yearsRange = function (year) {
+      return [year - 2, year - 1, year, year * 1 + 1, year * 1 + 2];
+    }
 
     var updateGroup = function () {
       self.group = _.find($scope.mc.groups, function (group) {
@@ -61,11 +61,11 @@
         Title.setSubContext(self.chaptersMap[self.chapterId].name);
       }
     };
-    
+
     updateGroup();
 
     $scope.$on("GroupsLoaded", updateGroup);
-   
+
     var queryParams = {};
     if (self.year !== undefined) {
       queryParams.year = self.year;
@@ -81,6 +81,19 @@
     Restangular.one("groups", $routeParams.groupId).getList("entries", queryParams).then(function (entries) {
       self.entries = entries;
     });
+
+    var editModal = $modal({
+      templateUrl: "partials/entry-modal.html",
+      show: false,
+      scope: $scope
+    });
+    
+    self.editEntry = function (entry) {
+      editModal.$promise.then(function () {
+        $scope.toEditEntry = Restangular.copy(entry);
+        editModal.show();
+      });
+    }
 
   });
 

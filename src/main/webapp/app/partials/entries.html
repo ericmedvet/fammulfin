@@ -1,14 +1,14 @@
 <header class="page-header">
   <h1>{{ec.group.name}}</h1>
-  <div class="chapters">
+  <h2 class="chapters">
     <span class="item">
       <a href="#/{{ec.group.id}}/entries/all/{{ec.year}}/{{ec.month}}">*</a>
     </span>
     <span data-ng-repeat="id in ec.chaptersMap[ec.chapterId].ids" class="item">
       <a href="#/{{ec.group.id}}/entries/chapter/{{id}}/{{ec.year}}/{{ec.month}}">{{ec.chaptersMap[id].name}}</a>
     </span>
-  </div>
-  <div>
+  </h2>
+  <h2>
     <span data-bs-dropdown>{{({true:mc.CONST.monthNames[ec.month-1],false:'*'})[ec.month!=undefined]}}<span class="caret"></span></span>
     <ul class="dropdown-menu" role="menu">
       <li data-ng-repeat="m in [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]">
@@ -29,17 +29,23 @@
         <a data-ng-hide="ec.chapterId" href="#/{{ec.group.id}}/entries/all/{{y}}/{{ec.month}}">{{y}}</a>
       </li>
     </ul>
-  </div>
-  <form class="form-inline pull-right" role="search">
-    <div class="input-group">
-      <input type="text" class="form-control" placeholder="Filter" data-ng-model="ec.filterText">
-      <span class="input-group-btn">
-        <button class="btn btn-default" type="button" data-ng-click="ec.filterText=''" data-ng-disabled="ec.filterText==''">
-          <span class="glyphicon glyphicon-erase"></span>
-        </button>
+  </h2>
+  <div class="pull-right">
+    <form class="form-inline" role="search">
+      <span>
+        <span data-ng-show="ec.filterText">{{(ec.entries|filter:ec.filterText).length}} on </span>
+        {{ec.entries.length}} entries
       </span>
-    </div>
-  </form>
+      <div class="input-group">
+        <input type="text" class="form-control" placeholder="Filter" data-ng-model="ec.filterText">
+        <span class="input-group-btn">
+          <button class="btn btn-default" type="button" data-ng-click="ec.filterText=''" data-ng-disabled="ec.filterText==''">
+            <span class="glyphicon glyphicon-erase"></span>
+          </button>
+        </span>
+      </div>
+    </form>
+  </div>
 </header>
 
 <table class="table table-striped table-hover table-condensed entries-table">
@@ -81,6 +87,7 @@
   <tbody>
     <tr data-ng-repeat="entry in ec.entries|filter:ec.filterText|orderBy:ec.order.field:ec.order[ec.order.field]">
       <td class="controls">
+        <a data-ng-click="ec.editEntry(entry)"><span class="glyphicon glyphicon-edit"></span></a>
       </td>
       <td class="date">
         {{entry.date|date:mc.CONST.dateFormats.short}}
